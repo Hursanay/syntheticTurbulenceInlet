@@ -1,0 +1,33 @@
+source $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+###meshing:
+
+rm log.*
+rm -r constant/polyMesh
+rm -r processor*
+runApplication blockMesh
+runApplication decomposePar
+runParallel renumberMesh -overwrite -constant
+runParallel checkMesh -allTopology -allGeometry -constant
+
+#-----------------------------
+rm log.foamRun
+#rm log.reconstructPar
+#rm -r postProcessing
+foamListTimes -rm
+foamListTimes -processor -time 0: -rm
+
+# Number of processors
+numProcs=$(ls -d processor* | wc -l)
+# Loop through each processor directory and copy files
+for ((i=0; i<numProcs; i++)); do
+    rm -r processor$i/0
+    cp -r 0.orig processor$i/0
+done
+
+mpirun -np 12 foamRun -parallel | tee log.foamRun
+# reconstructPar | tee log.reconstructPar
+
+# runParallel `getApplication`
+# runApplication reconstructPar
+

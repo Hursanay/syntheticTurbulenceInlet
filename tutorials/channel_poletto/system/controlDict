@@ -1,0 +1,132 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     foamRun;
+
+solver          incompressibleFluid;
+/*.com: application     pimpleFoam; */
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+/* endTime         4e-2; */
+endTime         45;
+
+deltaT          1e-3;
+
+writeControl    adjustableRunTime;
+
+/* writeInterval   4e-3; */
+writeInterval   1.0;
+
+purgeWrite      0;
+/* purgeWrite      10; */
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+libs
+(
+"libsyntheticTurbulenceInlet.so"
+);
+
+functions
+{
+  /*
+    Qcriterion
+    {
+        type            Q;
+        libs            ("libfieldFunctionObjects.so");
+        writeControl    writeTime;
+    }
+    vorticity
+    {
+        type            vorticity;
+        libs            ("libfieldFunctionObjects.so");
+        writeControl    writeTime;
+    }
+    */
+
+    wallShearStress
+    {
+        type                wallShearStress;
+        libs                ("libfieldFunctionObjects.so");
+        patches             ( bottomWall topWall );
+        writePrecision      10;
+        writeToFile         yes;
+        executeControl      timeStep;
+        executeInterval     1;
+        writeControl        writeTime;
+    }
+
+    fieldAverage1
+    {
+        type            fieldAverage;
+        libs            ("libfieldFunctionObjects.so");
+        writeControl    adjustableRunTime;
+        base            time;
+
+        writeInterval   45;
+        window          36.5;
+
+        fields
+        (
+            U
+            {
+                mean        yes;
+                prime2Mean  yes;
+                base        time;
+            }
+
+            wallShearStress
+            {
+                mean        yes;
+                base        time;
+            }
+        );
+    }
+
+  #includeFunc    spanAv_inlet //order: 3.XX,4.XY,5.XZ,6.YY,7.YZ,8.ZZ
+  #includeFunc    spanAv_topWall
+  #includeFunc    spanAv_bottomWall
+  #includeFunc    lineInlet
+  #includeFunc    lineX1
+  #includeFunc    lineX2
+  #includeFunc    lineX3
+  #includeFunc    lineX4
+  #includeFunc    lineX5
+  #includeFunc    lineX6
+  #includeFunc    lineX7
+  #includeFunc    lineX8
+
+  //#includeFunc    yPlus
+}
+
+
+// ************************************************************************* //

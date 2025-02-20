@@ -1,0 +1,27 @@
+source $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+numProcs=$(getNumberOfProcessors)
+###meshing:
+
+rm log.*
+rm -r constant/polyMesh
+blockMesh | tee log.blockMesh
+
+rm -r 0
+cp -r 0.orig/ 0
+rm -r processor*
+decomposePar | tee log.decomposePar
+
+mpirun -np $numProcs renumberMesh -overwrite -constant -parallel | tee log.renumberMesh
+mpirun -np $numProcs checkMesh -allTopology -allGeometry -constant -parallel | tee log.checkMesh
+
+#-----------------------------
+# rm log.foamRun
+# rm log.reconstructPar
+# rm -r postProcessing
+# foamListTimes -rm
+# foamListTimes -processor -rm
+
+mpirun -np $numProcs foamRun -parallel | tee log.foamRun
+# reconstructPar | tee log.reconstructPar
+

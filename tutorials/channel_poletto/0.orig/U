@@ -1,0 +1,66 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  | =========                 |                                                 |
+  | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+  |  \\    /   O peration     | Version:  v1812                                 |
+  |   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+  |    \\/     M anipulation  |                                                 |
+  \*---------------------------------------------------------------------------*/
+FoamFile
+{
+  version     2.0;
+  format      ascii;
+  class       volVectorField;
+  location    "1";
+  object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [ 0 1 -1 0 0 0 0 ];
+
+internalField   uniform ( 17.55 0 0 );
+
+boundaryField
+{
+  inlet
+  {
+        type            syntheticTurbulenceInlet;
+        value           uniform (17.55 0 0);
+        geometryMode    channel; //Required; Choose between: an annulus, a disk, a rectangle, and a channel (rectangle with PBC in one direction)
+        wallLongOrShort long; //wall on the long or the short side of the channel
+
+        Umean           17.55; //mean speed in the main flow direction
+        //Utau            -10; // friction velocity; Default: Utau is calculated from the expression for a smooth pipe (the lower limit can be forced by e.g. a negative value)
+        //swirlNr         0.0; //swirl number; Default: 0.
+
+        //d               1; //Ratio of sum of eddy volumes to eddy box volume, i.e. eddy density; Default: 1.
+        //nCellPerEddy    1; //Minimum eddy length in units of number of cells; Default: 5.
+        //scale           1; //Heuristic scaling factor (scales U'); Default: 1.
+    }
+  
+  bottomWall
+  {
+    type            fixedValue;
+    value           uniform ( 0 0 0 );
+  }
+  topWall
+  {
+    type            fixedValue;
+    value           uniform ( 0 0 0 );
+  }
+  sides_half0
+  {
+    type            cyclic;
+  }
+  sides_half1
+  {
+    type            cyclic;
+  }
+
+  outlet
+  {
+    type            inletOutlet;
+    inletValue      uniform (0 0 0);
+    value           uniform (0 0 0);
+  }
+
+}

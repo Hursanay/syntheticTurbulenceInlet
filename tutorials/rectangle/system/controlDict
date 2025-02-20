@@ -1,0 +1,97 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
+}
+
+application     foamRun;
+
+solver          incompressibleFluid;
+
+startFrom       startTime;
+/* startFrom       latestTime; */
+
+startTime       0.0;
+
+stopAt          endTime;
+
+endTime         1e-5;
+/* endTime         2e-7; */
+
+deltaT          1e-5;
+
+writeControl    adjustableRunTime;
+
+writeInterval   1e-5;
+/* writeInterval   1e-7; */
+
+purgeWrite 	    0;
+
+writeFormat     ascii;//binary;
+
+writePrecision  10;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+adjustTimeStep  yes;
+
+maxCo           0.8;
+
+maxDi           0.7;
+
+libs
+(
+"libsyntheticTurbulenceInlet.so"
+);
+
+/* OptimisationSwitches */
+/* { */
+/*     fileHandler collated; */
+/* } */
+
+functions
+{
+  //.org:
+  /* #includeFunc    vorticity */
+  /* #includeFunc    Qdot */
+  /* #includeFunc    CourantNo */
+  /* #includeFunc    residuals */
+  /* #includeFunc    mag(U) */
+  /* #includeFunc    cutPlaneSurface */
+  #includeFunc    patchSurface
+  /* #includeFunc    scalarTransport */
+  /* #includeFunc    cellMin */
+  /* #includeFunc    cellMax */
+
+  /* #includeFunc    patchFlowRate(name=inletFlowRatePilot, patch=inlet-pilot) */
+  /* #includeFunc    patchFlowRate(name=inletFlowRateOuter, patch=inlet-outer) */
+  /* #includeFunc    patchFlowRate(name=outletFlowRate, patch=outlet) */
+  /* #includeFunc    patchFlowRate(name=outletFlowRateWeighted, patch=outlet, fields=(H2 H O2 O OH H2O HO2 H2O2 N2), weightField=phi) */
+
+  /* #includeFunc    patchAverage(name=areaAv_inletPilot, patch=inlet-pilot, fields=( U p T rho k nut H2 H O2 O OH H2O HO2 H2O2 N2 LMA Qdot)) */
+  /* #includeFunc    patchAverage(name=areaAv_inletOuter, patch=inlet-outer, fields=( U p T rho k nut H2 H O2 O OH H2O HO2 H2O2 N2 LMA Qdot)) */
+  /* #includeFunc    patchAverage(name=areaAv_outlet, patch=outlet, fields=( U p T rho k nut H2 H O2 O OH H2O HO2 H2O2 N2 LMA Qdot)) */
+
+
+  /* #includeFunc    volIntegrate(name=integratedHRR, Qdot) */
+}
+
+
+// ************************************************************************* //

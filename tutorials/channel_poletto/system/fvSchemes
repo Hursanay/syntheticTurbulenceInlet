@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1812                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    //default           localEuler;
+    default             Euler;
+}
+
+gradSchemes
+{
+    default             cellLimited Gauss linear 1;
+    //default           cellLimited Gauss linear 1;
+    //default           Gauss linear;
+    //grad(U)           cellLimited Gauss linear 1;
+    //grad(h)           cellLimited Gauss linear 1;
+}
+
+divSchemes
+{
+    default             none;
+    div(phi,U)          Gauss linearUpwind grad(U);
+    //div(phi,U)        Gauss limitedLinearV 1;
+    // div(phi,Yi)         Gauss limitedLinear01 1;
+    div(phi,h)          Gauss linearUpwind default;
+    div(phi,K)          Gauss limitedLinear 1;
+    //div(phi,e)        Gauss limitedLinear 1;
+    //div(phid,p)       Gauss limitedLinear 1;
+    //div(phiv,p)       Gauss limitedLinear 1;
+    div(phi,epsilon)    Gauss linearUpwind default;
+    // div(phi,Yi_h)       Gauss limitedLinear01 1;
+    div(phi,k)          Gauss linearUpwind default;
+    // div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+    div(phi,B)          Gauss limitedUpwind 1;
+    div(B)              Gauss limitedUpwind 1;
+    div(phi,nuTilda)    Gauss limitedUpwind 1;
+ 
+}
+
+laplacianSchemes
+{
+    //default           Gauss linear corrected;
+    default             Gauss linear limited 0.777;
+    //default           Gauss linear limited 0.5;
+}
+
+interpolationSchemes
+{
+    default             linear;
+}
+
+snGradSchemes
+{
+    //default           corrected;
+    default             limited 0.777;
+}
+// ************************************************************************* //

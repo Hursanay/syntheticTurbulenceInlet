@@ -1,0 +1,40 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+Description
+    Writes out patch surface files with interpolated field data in VTK format.
+
+\*---------------------------------------------------------------------------*/
+
+/* #includeEtc "caseDicts/functions/surface/patchSurface.cfg" */
+
+// ************************************************************************* //
+type            surfaces;
+libs            ("libsampling.so");
+interpolationScheme   cellPoint;
+surfaceFormat   vtk;
+fields ( U);
+/* fields ( U p T rho k nut H2 H O2 O OH H2O HO2 H2O2 N2 LMA Qdot vorticity); */
+writeControl    adjustableRunTime;
+writeInterval   1e-6;
+writeFields     false;
+surfaces
+  (
+    inlet
+    {
+        type            patch;
+        patches         (inlet);
+        interpolate     false;
+        /* interpolate     true; */
+    }
+    /* outlet */
+    /* { */
+    /*     type            patch; */
+    /*     patches         (outlet); */
+    /*     interpolate     true; */
+    /* } */
+    );

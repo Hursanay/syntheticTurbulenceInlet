@@ -1,0 +1,4 @@
+eddy/eddy.C
+syntheticTurbulenceInletFvPatchVectorField.C
+
+LIB = $(FOAM_LIBBIN)/libsyntheticTurbulenceInlet
