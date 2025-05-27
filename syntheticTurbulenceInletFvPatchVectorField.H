@@ -86,11 +86,16 @@ namespace Foam
         //average kinematic viscosity (nu=mu/rho)
         scalar avNu;
 
-        //the geometry can be one of these: an annulus, a disk, a rectangle, and a channel (rectangle with PBC in one direction)
+        //the geometry can be one of these: annulus, disk, rectangle, channel (rectangle with PBC in one direction), arbitrary (the purpose is to generate turbulence that do not need to follow DNS profiles)
         word geometryMode;
         
         //For channel: Are the walls on the long or the short edge? The other direction is assumed to have PBC.
         word wallLongOrShort;
+
+        //when geometryMode is arbitrary, its radius and its center are
+        scalar arbitraryModeRadius; //default largest distance from the patch center
+        vector arbitraryModeCenter; //default centerCoord
+        bool arbitraryModeCenterIsInDict;
 
         //- Mean velocity field
         vectorField U_;
@@ -109,13 +114,16 @@ namespace Foam
         vector inplaneVec1_;
         vector inplaneVec2_;
 
-        //- Normalisation factor for mean velocity
-        autoPtr<Function1<scalar>> Umean;
+        //If user specifies "massFlow" or not (if not, user specifies "Umean")
+        bool massFlowMode;
 
-        //Velocity scale to determine eddy size and intensity, defaults to Umean(time=startTime)
-        scalar Uscale;
+        //- Normalisation factor for mean velocity or mass flow
+        autoPtr<Function1<scalar>> inFlow;
 
-        //- Average velocity used for scaling
+        //Mean velocity (if inFlow is mass flow, Umean is inFlow/rho/area) 
+        scalar Umean;
+
+        //- Average velocity from DNS data used for scaling
         scalar Uavg;
 
         //- Swirl number 
@@ -162,6 +170,9 @@ namespace Foam
 
         //random number generator
         std::mt19937 randGen;
+
+        //Density when incompressible solver is used (default 1)
+        scalar rhoInf;
 
     public:
 
@@ -216,6 +227,9 @@ namespace Foam
 
 
       // Member Functions
+      
+      // Get the present mean U
+      void updateUmean();
       
       //initialize geometry
       void initializeGeometry();

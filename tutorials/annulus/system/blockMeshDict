@@ -23,13 +23,13 @@ nz      30;
 
 r_i      0.002;
 r_o      0.009;
-r_i_Sq2  0.00141; //r_i/sqrt(2)
-r_o_Sq2  0.00636; //r_o/sqrt(2)
+r_i_Sq2  #calc "$r_i / sqrt(2.0)"; //r_i/sqrt(2)
+r_o_Sq2  #calc "$r_o / sqrt(2.0)";; //r_o/sqrt(2)
 
-r_i_neg      -0.002;
-r_o_neg      -0.009;
-r_i_Sq2_neg  -0.00141; //-r_i/sqrt(2)
-r_o_Sq2_neg  -0.00636; //-r_o/sqrt(2)
+r_i_neg      #calc "- $r_i";
+r_o_neg      #calc "- $r_o";
+r_i_Sq2_neg  #calc "- $r_i / sqrt(2.0)";; //-r_i/sqrt(2)
+r_o_Sq2_neg  #calc "- $r_o / sqrt(2.0)";; //-r_o/sqrt(2)
 
 xMin    0.0;
 xMax    0.007;

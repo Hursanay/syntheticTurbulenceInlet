@@ -25,9 +25,11 @@ boundaryField
     inlet
     {
         type            syntheticTurbulenceInlet;
-        geometryMode    disk; //Required; Choose between: an annulus, a disk, a rectangle, and a channel (rectangle with PBC in one direction)
+        geometryMode    rectangle; //Required; Choose between: an annulus, a disk, a rectangle, and a channel (rectangle with PBC in one direction)
 
-        Umean           10.0; //mean speed in the main flow direction
+        massFlowMode    true;
+        massFlow        1e-3;
+
         //Utau            -10; // friction velocity; Default: Utau is calculated from the expression for a smooth pipe (the lower limit can be forced by e.g. a negative value)
         //swirlNr         0.0; //swirl number; Default: 0.
 

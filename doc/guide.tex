@@ -1,0 +1,86 @@
+\subsection{Setup}%
+\label{sub:Setup}
+
+Here are the steps on getting the BC up and running on your local OpenFoam-12.
+Open a terminal and do the following:
+\begin{enumerate}
+  \item Clone the repository to any folder (given that you have access) by typing:\\ \textit{git clone git@gitlab.sintef.no:Hursanay.Fyhn/syntheticturbulenceinlet.git}
+  \item Go into the cloned folder by typing\\ \textit{cd syntheticTurbulenceInlet}
+  \item Source you local OpenFoam-12 the way you normally source it.
+  \item Compile the boundary condition and add it to the list of boundary conditions for your OpenFoam-12 by typing:\\ \textit{wmake}
+    \\ (ignore the message about .H files already existing)
+  \item You can now use the BC like any other, just remember to source the relevant library by adding this line to your controlDict:\\
+    \textit{libs (``libsyntheticTurbulenceInlet.so'');}
+  \item Within the cloned directory, you will find a folder titled tutorials. Try out the tutorial cases for the four different geometry modes inside the tutorials folder.
+\end{enumerate}
+
+\subsection{Parameters}%
+\label{sub:Parameters}
+
+\begin{itemize}
+  \item \textit{massFlowMode} (bool) (optional)\\
+    Choose if you want to specify a massFlow (with true) or an Umean (with false).\\
+    Default: false
+
+  \item \textit{massFlow} (scalar, table, coded or other Function1 types) (required if massFlowMode is true)\\
+    Total mass flow rate into the patch.
+
+  \item \textit{Umean} (scalar, table, coded or other Function1 types) (required if massFlowMode is false)\\
+    Mean speed into the patch.
+
+  \item \textit{geometryMode} (annulus, disk, rectangle, channel or arbitrary) (required)\\
+    Channel is rectangle with PBC in one direction. The purpose of the arbitrary mode is to generate turbulence on a patch with arbitrary shape, do not follow the DNS profiles unlike the other geometry modes due to constant $U$, $R$ and $L$.
+
+  \item \textit{wallLongOrShort} (long or short) (optional)\\
+    When \textit{geometryMode} is \textit{channel}, choose if the wall is on the long or the short side.\\
+    Default: long
+
+  \item \textit{arbitraryModeRadius} (scalar) (optional)\\
+    When \textit{geometryMode} is \textit{arbitrary}, the use can choose the radius within which to generate turbulence.\\
+    Default: The largest distance from the patch center.
+
+  \item \textit{arbitraryModeCenter} (vector) (optional)\\
+    When \textit{geometryMode} is \textit{arbitrary}, the user can choose the center coordinate.\\
+    Default: geometrically averaged center coordinate of the patch.
+
+  \item \textit{Utau} (scalar) (optional)\\
+    Friction velocity\\
+    Default: Utau is calculated from the expression for a smooth pipe. There is an absolute lower limit that maps the entire DNS profile over the entire width, and it can be forced by e.g. choosing a negative value.
+
+  \item \textit{swirlNr} (scalar) (optional)\\
+    Swirl number\\
+    Default: 0
+
+  \item \textit{d} (scalar) (optional)\\
+    Eddy density (ratio of the sum of eddy volumes to the eddy box volume)\\
+    Default: 1
+
+  \item \textit{scale} (scalar) (optional)\\
+    A scaling factor for $U'$\\
+    Default: 1
+
+  \item \textit{nCellPerEddy} (int) (optional)\\
+    Minimum eddy length in units of number of cells\\
+    Default: 1
+
+  \item \textit{Lref} (scalar) (optional)\\
+    Normalisation factor for integral-length scale\\
+    Default: 1
+    
+  \item \textit{seed} (unsigned int) (optional)\\
+    Seed for the random numbers\\
+    Default: an arbitrary number
+
+\end{itemize}
+
+\subsection{Example usage}%
+\label{sub:Example usage}
+
+\noindent inlet\\
+  \{\\
+    type            syntheticTurbulenceInlet;\\
+    geometryMode    annulus;\\
+    massFlowMode    true;\\
+    massFlow        2.53e-4;\\
+  \}\\
+

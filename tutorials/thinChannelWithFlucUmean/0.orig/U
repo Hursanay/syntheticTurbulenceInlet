@@ -24,7 +24,6 @@ boundaryField
   inlet
   {
     type            syntheticTurbulenceInlet;
-    value           $internalField;
     geometryMode    channel; //available: annulus, disk, rectangle or channel
     wallLongOrShort long; //wall on the long or the short side
     Umean           table #include "RandomForcing_InletU.dat" //mean speed in the main flow direction
@@ -35,7 +34,7 @@ boundaryField
 
     delta           2; //Characteristic length scale; Default: 1 but should specify.
     //d               1; //Ratio of sum of eddy volumes to eddy box volume, i.e. eddy density; Default: 1.
-    //nCellPerEddy    1; //Minimum eddy length in units of number of cells; Default: 5.
+    //nCellPerEddy    1; //Minimum eddy length in units of number of cells; Default: 1.
     //scale           1; //Heuristic scaling factor (scales U'); Default: 1.
     }
 

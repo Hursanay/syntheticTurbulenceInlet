@@ -43,22 +43,26 @@ syntheticTurbulenceInletFvPatchVectorField
     const dictionary& dict
 )
 :
-    fixedValueFvPatchVectorField(p, iF, dict),
+    fixedValueFvPatchVectorField(p, iF, dict, false),
     Utau(dict.lookupOrDefault<scalar>("Utau", 0.0)),
     UtauIsInDict(dict.found("Utau")),
     geometryMode(dict.lookup<word>("geometryMode")),
     wallLongOrShort(dict.lookupOrDefault<word>("wallLongOrShort","long")),
+    arbitraryModeRadius(dict.lookupOrDefault<scalar>("arbitraryModeRadius",-1)),
+    arbitraryModeCenter(dict.lookupOrDefault<vector>("arbitraryModeCenter",vector(0,0,0))),
+    arbitraryModeCenterIsInDict(dict.found("arbitraryModeCenter")),
     U_(size(), Zero),
-    Umean(
+    massFlowMode(dict.lookupOrDefault<bool>("massFlowMode",false)),
+    inFlow(
         Function1<scalar>::New
         (
-            "Umean",
+            massFlowMode ? "massFlow" : "Umean",
             this->db().time().userUnits(),
             iF.dimensions(),
             dict
         )
     ),
-    Uscale(dict.lookupOrDefault<scalar>("Uscale", max(Umean->value(db().time().value()), 1e-4))),
+    Umean(0),
     Uavg(0),
     swirlNr(dict.lookupOrDefault<scalar>("swirlNr", 0)),
     nEddy_(0),
@@ -67,11 +71,13 @@ syntheticTurbulenceInletFvPatchVectorField
     kappa_(0.41),
     Lref(dict.lookupOrDefault<scalar>("Lref", 1)),
     scale_(dict.lookupOrDefault<scalar>("scale", 1)),
-    nCellPerEddy_(dict.lookupOrDefault<label>("nCellPerEddy", 5)),
+    nCellPerEddy_(dict.lookupOrDefault<label>("nCellPerEddy", 1)),
     notInitialized_(true),
     seed_(dict.lookupOrDefault<label>("seed", 536)),
-    randGen(seed_)
+    randGen(seed_),
+    rhoInf(dict.lookupOrDefault<scalar>("rhoInf",1))
 {
+    vectorField::operator=(U_);
 }
 
 Foam::syntheticTurbulenceInletFvPatchVectorField::
@@ -89,12 +95,16 @@ syntheticTurbulenceInletFvPatchVectorField
     avNu(ptf.avNu),
     geometryMode(ptf.geometryMode),
     wallLongOrShort(ptf.wallLongOrShort),
+    arbitraryModeRadius(ptf.arbitraryModeRadius),
+    arbitraryModeCenter(ptf.arbitraryModeCenter),
+    arbitraryModeCenterIsInDict(ptf.arbitraryModeCenterIsInDict),
     U_(ptf.U_),
     length1(ptf.length1),
     length2(ptf.length2),
     centerCoord(ptf.centerCoord),
-    Umean(ptf.Umean, false),
-    Uscale(ptf.Uscale),
+    massFlowMode(ptf.massFlowMode),
+    inFlow(ptf.inFlow, false),
+    Umean(ptf.Umean),
     Uavg(ptf.Uavg),
     swirlNr(ptf.swirlNr),
     nEddy_(ptf.nEddy_),
@@ -109,7 +119,8 @@ syntheticTurbulenceInletFvPatchVectorField
     maxSigmaX_(ptf.maxSigmaX_),
     notInitialized_(ptf.notInitialized_),
     seed_(ptf.seed_),
-    randGen(ptf.randGen)
+    randGen(ptf.randGen),
+    rhoInf(ptf.rhoInf)
 {}
 
 
@@ -126,12 +137,16 @@ syntheticTurbulenceInletFvPatchVectorField
     avNu(mwvpvf.avNu),
     geometryMode(mwvpvf.geometryMode),
     wallLongOrShort(mwvpvf.wallLongOrShort),
+    arbitraryModeRadius(mwvpvf.arbitraryModeRadius),
+    arbitraryModeCenter(mwvpvf.arbitraryModeCenter),
+    arbitraryModeCenterIsInDict(mwvpvf.arbitraryModeCenterIsInDict),
     U_(mwvpvf.U_),
     length1(mwvpvf.length1),
     length2(mwvpvf.length2),
     centerCoord(mwvpvf.centerCoord),
-    Umean(mwvpvf.Umean, false),
-    Uscale(mwvpvf.Uscale),
+    massFlowMode(mwvpvf.massFlowMode),
+    inFlow(mwvpvf.inFlow, false),
+    Umean(mwvpvf.Umean),
     Uavg(mwvpvf.Uavg),
     swirlNr(mwvpvf.swirlNr),
     nEddy_(mwvpvf.nEddy_),
@@ -146,11 +161,27 @@ syntheticTurbulenceInletFvPatchVectorField
     maxSigmaX_(mwvpvf.maxSigmaX_),
     notInitialized_(mwvpvf.notInitialized_),
     seed_(mwvpvf.seed_),
-    randGen(mwvpvf.randGen)
+    randGen(mwvpvf.randGen),
+    rhoInf(mwvpvf.rhoInf)
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+void Foam::syntheticTurbulenceInletFvPatchVectorField::updateUmean()
+{
+  const surfaceScalarField& phi = this->internalField().mesh().lookupObject<surfaceScalarField>("phi");
+  if (phi.dimensions() == dimMass/dimTime)
+  { 
+    // if phi is mass flow rate
+    const fvPatchField<scalar>& rho = patch().lookupPatchField<volScalarField, scalar>("rho");
+    Umean = inFlow->value(db().time().value())/(massFlowMode ? gSum(rho*patch().magSf()) : 1);
+  } else {
+    // if phi is volumetric flow rate
+    Umean = inFlow->value(db().time().value())/(massFlowMode ? gSum(rhoInf*patch().magSf()) : 1);
+  }
+  /* Info << "Umean = " << Umean<< endl; */
+}
+
 void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeGeometry()
 {
   centerCoord = gAverage(patch().Cf());
@@ -258,11 +289,20 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeGeometry()
     if (geometryMode == "channel" && wallLongOrShort == "short" ) {
       distBetweenWalls = length2;
     }
+  } else if (geometryMode == "arbitrary") {
+    length1 = 0.0;
+    if (arbitraryModeRadius < 0) {
+      arbitraryModeRadius = gMax(mag(faceVertices - centerCoord));
+    }
+    length2 = arbitraryModeRadius; 
+    distBetweenWalls = 2 * length2;
+    if (!arbitraryModeCenterIsInDict) {
+      arbitraryModeCenter = centerCoord;
+    }
+    Info << "\nArbitrary mode with radius = " <<  length2 <<  " and center " << arbitraryModeCenter << endl << endl;
   } else {
-    FatalErrorInFunction << "Invalid geometryMode, choose between: {annulus, disk, rectangle, channel}" << exit(FatalError);
+    FatalErrorInFunction << "Invalid geometryMode, choose between: {annulus, disk, rectangle, channel, arbitrary}" << exit(FatalError);
   }
-
-  //calculate the minimum allowed friction velocity Utau from Reynolds number Re
 
   const surfaceScalarField& phi = this->internalField().mesh().lookupObject<surfaceScalarField>("phi");
   if (phi.dimensions() == dimMass/dimTime)
@@ -277,8 +317,22 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeGeometry()
     avNu = gAverage(nu);
   }
 
+  //calculate the minimum allowed friction velocity Utau from Reynolds number Re
   if (!UtauIsInDict) {
-    scalar Re = Uscale * distBetweenWalls / avNu;
+    //instead of simply updateUmean(), integrate over 10 s:
+    const surfaceScalarField& phi = this->internalField().mesh().lookupObject<surfaceScalarField>("phi");
+    if (phi.dimensions() == dimMass/dimTime)
+    { 
+      // if phi is mass flow rate
+      const fvPatchField<scalar>& rho = patch().lookupPatchField<volScalarField, scalar>("rho");
+      Umean = inFlow->integral(db().time().value(), db().time().value() + 10.0)/10.0/(massFlowMode ? gSum(rho*patch().magSf()) : 1);
+    } else {
+      // if phi is volumetric flow rate
+      Umean = inFlow->integral(db().time().value(), db().time().value() + 10.0)/10.0/(massFlowMode ? gSum(rhoInf*patch().magSf()) : 1);
+    }
+    /* Info << "Umean for Re = " << Umean<< endl; */
+
+    scalar Re = max(Umean, 1e-4) * distBetweenWalls / avNu;
     scalar sqf; //square root of the Darcy friction factor
     Info << "Re = " << Re << endl;
     if (Re < 3000) {
@@ -291,7 +345,7 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeGeometry()
         /* Info << "Residual = " << 1.93*log10(Re*sqf) -  1/sqf - 0.537 << endl; */
       }
     }
-    Utau = Uscale * sqf / sqrt(8.0);
+    Utau = max(Umean, 1e-4) * sqf / sqrt(8.0);
   }
 
   #include "URL/URL_len.H"
@@ -344,6 +398,11 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::getRandomPositionAndInten
     rp1 = (rp1 - 0.5)*length1;
     rp2 = (rp2 - 0.5)*length2;
     pos = centerCoord + rp1*inplaneVec1_ + rp2*inplaneVec2_;
+  } else if (geometryMode == "arbitrary") {
+    rp1 *= 6.28318530718; //theta
+    // map positions between 0 and 1 to between 0 to length2, nonuniformly: 
+    rp2 = length2*sqrt(rp2); //radius
+    pos = arbitraryModeCenter + (rp2*cos(rp1))*inplaneVec1_ + (rp2*sin(rp1))*inplaneVec2_;
   }
 }
 
@@ -417,35 +476,43 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::getRandSigmaFromPos(vecto
   const tensor T(u,v,w); // Transformation matrix, T, for the Reynolds stress tensor
 
   scalar L;
-  int j = 0;
-  while (j < URL_len && r > rplus_list[j])
-  {
-    j++;
-  }
-  if (j == 0) {
-    L = L_list[0];
-    R = symmTensor(Ruu_list[0], Ruv_list[0], Ruw_list[0],
-                                    Rvv_list[0], Rvw_list[0],
-                                                 Rww_list[0]);
-  } else if (r > rplus_list[URL_len-1]) {
+  if (geometryMode == "arbitrary") {
     L = L_list[URL_len -1];
     R = symmTensor(Ruu_list[URL_len-1], Ruv_list[URL_len-1], Ruw_list[URL_len-1],
-                                    Rvv_list[URL_len-1], Rvw_list[URL_len-1],
-                                                 Rww_list[URL_len-1]);
+                                        Rvv_list[URL_len-1], Rvw_list[URL_len-1],
+                                                             Rww_list[URL_len-1]);
   } else {
-    //interpolate between the values at j and j-1
-    L = -(( L_list[j-1]*(rplus_list[j]-r) + L_list[j]*(r-rplus_list[j-1]) ) / (rplus_list[j]-rplus_list[j-1]));
-    R = (symmTensor(Ruu_list[j], Ruv_list[j], Ruw_list[j],
-                        Rvv_list[j], Rvw_list[j],
-                        Rww_list[j])*(rplus_list[j]-r) +
-             symmTensor(Ruu_list[j-1], Ruv_list[j-1], Ruw_list[j-1],
-                       Rvv_list[j-1], Rvw_list[j-1],
-                       Rww_list[j-1])*(r-rplus_list[j-1]))/(rplus_list[j]-rplus_list[j-1]);
-
+    int j = 0;
+    while (j < URL_len && r > rplus_list[j]){
+      j++;
+    }
+    if (j == 0) {
+      L = L_list[0];
+      R = symmTensor(Ruu_list[0], Ruv_list[0], Ruw_list[0],
+                                      Rvv_list[0], Rvw_list[0],
+                                                   Rww_list[0]);
+    } else if (r > rplus_list[URL_len-1]) {
+      L = L_list[URL_len -1];
+      R = symmTensor(Ruu_list[URL_len-1], Ruv_list[URL_len-1], Ruw_list[URL_len-1],
+                                      Rvv_list[URL_len-1], Rvw_list[URL_len-1],
+                                                   Rww_list[URL_len-1]);
+    } else {
+      //interpolate between the values at j and j-1
+      L = -(( L_list[j-1]*(rplus_list[j]-r) + L_list[j]*(r-rplus_list[j-1]) ) / (rplus_list[j]-rplus_list[j-1]));
+      R = (symmTensor(Ruu_list[j], Ruv_list[j], Ruw_list[j],
+                          Rvv_list[j], Rvw_list[j],
+                          Rww_list[j])*(rplus_list[j]-r) +
+               symmTensor(Ruu_list[j-1], Ruv_list[j-1], Ruw_list[j-1],
+                         Rvv_list[j-1], Rvw_list[j-1],
+                         Rww_list[j-1])*(r-rplus_list[j-1]))/(rplus_list[j]-rplus_list[j-1]);
+    }
   }
+
   // Transform R to local coordinate system
   const tensor Rtmp = T.T() & tensor(R) & T;
   R = symmTensor(Rtmp.xx(), Rtmp.xy(), Rtmp.xz(), Rtmp.yy(), Rtmp.yz(), Rtmp.zz());
+  updateUmean();
+  scalar Uscale = max(Umean, 1e-4);
   R *= Uscale * Uscale / (Uavg * Uavg) ;
   L /= -Lref * (Uscale / Uavg / avNu);
 
@@ -482,81 +549,95 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeUProfile()
 
   //- Integral-length scale field
   scalarField L(size(), Zero);
-  forAll(patchPos, i)
-  {
-    scalar r = mag(patchPos[i] - centerCoord); //distance from wall
 
-    if (geometryMode == "annulus") {
-      if((r - length1) < (length2 - r)){
-        r = r - length1;
-      } else {
-        r = length2 - r;
-      }
-
-    } else if (geometryMode == "disk") {
-        r = length2 - r;
-
-    } else if (geometryMode == "rectangle") {
-      scalar l1 = (patchPos[i] - centerCoord) & inplaneVec1_;
-      scalar l2 = (patchPos[i] - centerCoord) & inplaneVec2_;
-      if ((length1/2.0 - mag(l1)) > (length2/2.0 - mag(l2))) {
-        r = length2/2.0 - mag(l2);
-      } else {
-        r = length1/2.0 - mag(l1);
-      }
-
-    } else if (geometryMode == "channel") {
-      if (wallLongOrShort == "long") {
-        scalar l1 = (patchPos[i] - centerCoord) & inplaneVec1_;
-        r = length1/2.0 - mag(l1);
-      } else if (wallLongOrShort == "short"){
-        scalar l2 = (patchPos[i] - centerCoord) & inplaneVec2_;
-        r = length2/2.0 - mag(l2);
-      } else {
-        FatalErrorInFunction << "Invalid \"wallLongOrShort\", choose between: {long, short}, which indicates if the walls are on the long or the short edge. The other direction is assumed to have PBC." << exit(FatalError);
-      }
-    }
-
-    r *= Sr; // y to yplus
-
-    int j = 0;
-    while (j < URL_len && r > rplus_list[j])
+  if (geometryMode == "arbitrary") {
+    forAll(patchPos, i)
     {
-      j++;
-    }
-    if (j == 0) {
-      U_[i] = patchNormal_*0.0;
-      L[i] = L_list[0];
-    } else if (j >= URL_len) {
-      U_[i] = patchNormal_*U_list[URL_len -1];
+      U_[i] = patchNormal_*1.0;
       L[i] = L_list[URL_len -1];
-    } else {
-      //interpolate between the values at j and j-1
-      U_[i] = patchNormal_*(( U_list[j-1]*(rplus_list[j]-r) + U_list[j]*(r-rplus_list[j-1]) ) / (rplus_list[j]-rplus_list[j-1]));
-      L[i] = -(( L_list[j-1]*(rplus_list[j]-r) + L_list[j]*(r-rplus_list[j-1]) ) / (rplus_list[j]-rplus_list[j-1]));
     }
+  } else {
+    forAll(patchPos, i)
+    {
+      scalar r = mag(patchPos[i] - centerCoord); //distance from wall
 
+      if (geometryMode == "annulus") {
+        if((r - length1) < (length2 - r)){
+          r = r - length1;
+        } else {
+          r = length2 - r;
+        }
+
+      } else if (geometryMode == "disk") {
+          r = length2 - r;
+
+      } else if (geometryMode == "rectangle") {
+        scalar l1 = (patchPos[i] - centerCoord) & inplaneVec1_;
+        scalar l2 = (patchPos[i] - centerCoord) & inplaneVec2_;
+        if ((length1/2.0 - mag(l1)) > (length2/2.0 - mag(l2))) {
+          r = length2/2.0 - mag(l2);
+        } else {
+          r = length1/2.0 - mag(l1);
+        }
+
+      } else if (geometryMode == "channel") {
+        if (wallLongOrShort == "long") {
+          scalar l1 = (patchPos[i] - centerCoord) & inplaneVec1_;
+          r = length1/2.0 - mag(l1);
+        } else if (wallLongOrShort == "short"){
+          scalar l2 = (patchPos[i] - centerCoord) & inplaneVec2_;
+          r = length2/2.0 - mag(l2);
+        } else {
+          FatalErrorInFunction << "Invalid \"wallLongOrShort\", choose between: {long, short}, which indicates if the walls are on the long or the short edge. The other direction is assumed to have PBC." << exit(FatalError);
+        }
+      }
+
+      r *= Sr; // y to yplus
+
+      int j = 0;
+      while (j < URL_len && r > rplus_list[j])
+      {
+        j++;
+      }
+      if (j == 0) {
+        U_[i] = patchNormal_*0.0;
+        L[i] = L_list[0];
+      } else if (j >= URL_len) {
+        U_[i] = patchNormal_*U_list[URL_len -1];
+        L[i] = L_list[URL_len -1];
+      } else {
+        //interpolate between the values at j and j-1
+        U_[i] = patchNormal_*(( U_list[j-1]*(rplus_list[j]-r) + U_list[j]*(r-rplus_list[j-1]) ) / (rplus_list[j]-rplus_list[j-1]));
+        L[i] = -(( L_list[j-1]*(rplus_list[j]-r) + L_list[j]*(r-rplus_list[j-1]) ) / (rplus_list[j]-rplus_list[j-1]));
+      }
+
+    }
   }
   // Normalize U
-  Uavg = gSum(U_ & patch().Sf())/ gSum(magSf);
+  Uavg = gSum(U_ & -patch().Sf())/ gSum(magSf);
   U_ *= 1.0/Uavg; //scaled to correct mean later in updateCoeff
-  L /= -Lref * (Uscale / Uavg / avNu);
-
+  updateUmean();
+  L /= -Lref * (max(Umean, 1e-4) / Uavg / avNu);
 
   //add velocity in the angular direction
   if (geometryMode == "annulus" || geometryMode == "disk") {
-    //density rho:
-    const surfaceScalarField& phi = this->internalField().mesh().lookupObject<surfaceScalarField>("phi");
-    // if phi is volumetric flow rate
-    scalarField rho(size(), 1);
-    // if phi is mass flow rate
-    if (phi.dimensions() == dimMass/dimTime)
-    {
-      rho = patch().lookupPatchField<volScalarField, scalar>("rho");
-    }
     scalar Rm = (length1+length2)/2; //mean radius
-    scalar G1 = gSum(rho * magSqr(U_) * magSf * magSqr(patchPos - centerCoord));
-    scalar G2 = gSum(rho * magSqr(U_) * magSf);
+
+    const surfaceScalarField& phi = this->internalField().mesh().lookupObject<surfaceScalarField>("phi");
+    scalar G1 = 0.0;
+    scalar G2 = 0.0;
+    if (phi.dimensions() == dimMass/dimTime)
+    { 
+      // if phi is mass flow rate
+      const fvPatchField<scalar>& rho = patch().lookupPatchField<volScalarField, scalar>("rho");
+      G1 = gSum(rho * magSqr(U_) * magSf * magSqr(patchPos - centerCoord));
+      G2 = gSum(rho * magSqr(U_) * magSf);
+    } else {
+      // if phi is volumetric flow rate
+      G1 = gSum(rhoInf * magSqr(U_) * magSf * magSqr(patchPos - centerCoord));
+      G2 = gSum(rhoInf * magSqr(U_) * magSf);
+    }
+
     scalar swirlFrac = swirlNr * Rm * G2 / G1; 
 
     forAll(patchPos, i)
@@ -609,7 +690,12 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeUProfile()
   maxSigmaX_ = gMax(sigmax_);
 
   // Eddy box volume
-  v0_ = 2*gSum(magSf)*maxSigmaX_;
+  if (geometryMode == "arbitrary") {
+    //to make the density on the turbulent part of the patch the same:
+    v0_ = 2*3.14*arbitraryModeRadius*arbitraryModeRadius*maxSigmaX_;
+  } else {
+    v0_ = 2*gSum(magSf)*maxSigmaX_;
+  }
 
   if (debug)
   {
@@ -651,10 +737,11 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::convectEddies()
 {
     const scalar deltaT = db().time().deltaTValue();
 
+    updateUmean();
     forAll(eddies, eddyI)
     {
         eddy& e = eddies[eddyI];
-        e.move(deltaT*Umean->value(db().time().value()));
+        e.move(deltaT*Umean);
 
         const scalar position0 = e.x();
 
@@ -728,7 +815,10 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::updateCoeffs()
 
     convectEddies();
 
-    vectorField Upatch = U_*Umean->value(db().time().value());
+    // scale with mean, then add eddies, then rescale with mean again:
+    
+    updateUmean();
+    vectorField Upatch = U_*Umean;
 
     const scalar c2 = scale_*Foam::sqrt((315.0/16.0)*v0_/scalar(nEddy_));
 
@@ -739,11 +829,27 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::updateCoeffs()
         Upatch[faceI] += c2*uPrimeEddy(Cf[faceI]);
     }
     // Re-scale to ensure correct flow rate
-    const scalar fCorr =
+    scalar fCorr = 0.0;
+    if (massFlowMode) {
+      //fCorr is inverse ass flow rate here
+      const surfaceScalarField& phi = this->internalField().mesh().lookupObject<surfaceScalarField>("phi");
+      if (phi.dimensions() == dimMass/dimTime)
+      { 
+        // if phi is mass flow rate
+        const fvPatchField<scalar>& rho = patch().lookupPatchField<volScalarField, scalar>("rho");
+        fCorr = 1.0/gSum(rho*(Upatch & -patch().Sf())); //total mass flow rate
+      } else {
+        // if phi is volumetric flow rate
+        fCorr = 1.0/gSum(rhoInf*(Upatch & -patch().Sf())); //total mass flow rate
+      }
+    } else {
+      //fCorr is area average U normal to the patch
+      fCorr = 
         gSum(patch().magSf())
-       /gSum(Upatch & -patch().Sf()); //area average U normal to the patch
+       /gSum(Upatch & -patch().Sf()); 
+    }
 
-    Upatch *= Umean->value(db().time().value())*fCorr; //* Umean / U average
+    Upatch *= inFlow->value(db().time().value())*fCorr; //* if massFlowMode: mass flow rate / sum mass flow over patch, if not then Umean/ U_average
 
     vectorField::operator=(Upatch);
 
@@ -758,12 +864,20 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::write(Ostream& os) const
         os,
         this->db().time().userUnits(),
         this->internalField().dimensions(),
-        Umean()
+        inFlow()
     );
-    writeEntry(os, "Uscale", Uscale);
+    writeEntry(os, "massFlowMode", massFlowMode);
     writeEntry(os, "Utau", Utau);
     writeEntry(os, "geometryMode", geometryMode);
-    writeEntry(os, "wallLongOrShort", wallLongOrShort);
+    if (geometryMode == "channel") {
+      writeEntry(os, "wallLongOrShort", wallLongOrShort);
+    }
+    if (geometryMode == "arbitrary") {
+      writeEntry(os, "arbitraryModeRadius", arbitraryModeRadius);
+      if (arbitraryModeCenterIsInDict) {
+        writeEntry(os, "arbitraryModeCenter", arbitraryModeCenter);
+      }
+    }
     writeEntry(os, "swirlNr", swirlNr);
     writeEntry(os, "delta", delta_);
     writeEntry(os, "d", d_);
@@ -771,7 +885,6 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::write(Ostream& os) const
     writeEntry(os, "Lref", Lref);
     writeEntry(os, "scale", scale_);
     writeEntry(os, "nCellPerEddy", nCellPerEddy_);
-    writeEntry(os, "value", *this);
 }
 
  
