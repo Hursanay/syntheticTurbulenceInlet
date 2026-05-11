@@ -1,0 +1,22 @@
+Annulus inlet (with swirl)
+==========================
+
+Demonstrates the syntheticTurbulenceInlet on an annular cross-section
+with a constant area-averaged mean speed and a non-zero swirl
+component (swirlNr = 0.5).
+
+Geometry            Annulus (two-block O-grid).
+Inlet target        Umean = 10 m/s.
+Swirl number        swirlNr = 0.5 (added tangential velocity).
+Friction velocity   Auto-computed from the bulk Reynolds number
+                    (smooth-pipe correlation).
+Solver              foamRun, incompressibleFluid.
+
+Run with:           ./Allrun
+Clean with:         ./Allclean
+
+Notes
+-----
+The mesh in this tutorial is intentionally coarse so the case starts
+quickly. Increase nx/ny/nz in system/blockMeshDict and bump endTime in
+system/controlDict for a converged statistical run.

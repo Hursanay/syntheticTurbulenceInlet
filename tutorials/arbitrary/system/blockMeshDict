@@ -1,0 +1,100 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Half-disk inlet of radius R in the y-z plane (z >= 0), extruded a
+// short distance L along x. The single block has 8 vertices: 4 on the
+// diameter (z = 0) and 4 on the semicircle at angle pi/4 from the
+// diameter. Six arc edges (three at the inlet, three at the outlet)
+// curve the boundary into a half-disk.
+
+scale   1;
+
+R       0.025;
+mR      -0.025;
+L       0.001;
+
+Rinv    0.01767766953;       // R/sqrt(2)
+mRinv   -0.01767766953;
+m1y     -0.02309698831;      // -R*cos(pi/8)
+m1z     0.009567085809;      //  R*sin(pi/8)
+m2y     0.02309698831;       //  R*cos(pi/8)
+
+nx      1;
+ny      80;
+nz      40;
+
+vertices
+(
+    (0     $mR     0)        // 0  inlet, left of diameter
+    ($L    $mR     0)        // 1  outlet, left of diameter
+    ($L    $R      0)        // 2  outlet, right of diameter
+    (0     $R      0)        // 3  inlet, right of diameter
+    (0     $mRinv  $Rinv)    // 4  inlet, on arc at theta = pi/4
+    ($L    $mRinv  $Rinv)    // 5  outlet, on arc at theta = pi/4
+    ($L    $Rinv   $Rinv)    // 6  outlet, on arc at theta = 3*pi/4
+    (0     $Rinv   $Rinv)    // 7  inlet, on arc at theta = 3*pi/4
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($nx $ny $nz) simpleGrading (1 1 1)
+);
+
+edges
+(
+    arc 0 4 (0    $m1y  $m1z)
+    arc 4 7 (0    0     $R)
+    arc 7 3 (0    $m2y  $m1z)
+    arc 1 5 ($L   $m1y  $m1z)
+    arc 5 6 ($L   0     $R)
+    arc 6 2 ($L   $m2y  $m1z)
+);
+
+boundary
+(
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+
+    outlet
+    {
+        type patch;
+        faces
+        (
+            (1 5 6 2)
+        );
+    }
+
+    walls
+    {
+        type wall;
+        faces
+        (
+            (0 1 2 3)       // diameter (z = 0)
+            (0 1 5 4)       // left of semicircle wall
+            (4 5 6 7)       // top of semicircle wall
+            (3 2 6 7)       // right of semicircle wall
+        );
+    }
+);
+
+
+// ************************************************************************* //

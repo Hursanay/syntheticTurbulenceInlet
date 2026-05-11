@@ -1,4 +1,0 @@
-eddy/eddy.C
-syntheticTurbulenceInletFvPatchVectorField.C
-
-LIB = $(FOAM_USER_LIBBIN)/libsyntheticTurbulenceInlet

@@ -1,0 +1,36 @@
+Arbitrary inlet (half-disk patch)
+================================
+
+Demonstrates the syntheticTurbulenceInlet on a non-canonical patch
+using geometryMode "arbitrary". In this mode the BC does not assume
+any specific geometric structure (annulus/disk/rectangle/channel) and
+does not interpolate from the bundled DNS profiles; it uses the last
+entry of the R and L tables uniformly across the patch, producing
+isotropic-ish synthetic turbulence on whatever shape the patch is.
+
+Geometry            Half-disk inlet, radius R = 0.025 m in the y-z
+                    plane (diameter along y at z = 0, semicircle
+                    above), extruded L = 0.001 m along x.
+Inlet target        Umean = 10 m/s.
+Friction velocity   Auto-computed from the bulk Reynolds number.
+Solver              foamRun, incompressibleFluid.
+
+Run with:           ./Allrun
+Clean with:         ./Allclean
+
+Notes
+-----
+- "arbitraryModeRadius" and "arbitraryModeCenter" can be set
+  explicitly in 0/U; if absent (as here), the BC uses the largest
+  face-vertex distance from the patch centroid as the radius and the
+  centroid itself as the center.
+- In arbitrary mode the defaults for "scale" (0.2) and "nCellPerEddy"
+  (5) differ from the other geometryModes (where both default to 1),
+  since there is no DNS-calibrated profile to anchor the eddy
+  intensity and size.
+- The half-disk inlet is produced in blockMesh from a single hex
+  block with three arc edges per end (left, top, right of the
+  semicircle); the fourth edge (the diameter, z = 0) is straight.
+- system/patchSurface writes the inlet U field to VTK every 1 ms of
+  simulation time so the eddies can be inspected in ParaView while
+  the case is still running.

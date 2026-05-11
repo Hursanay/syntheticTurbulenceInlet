@@ -1,0 +1,21 @@
+Rectangle inlet (incompressible, Umean driven)
+==============================================
+
+Demonstrates the syntheticTurbulenceInlet on a rectangular cross-section
+with walls on all four sides and a constant area-averaged mean speed
+(Umean = 10 m/s).
+
+Geometry            Rectangle (single block).
+Inlet target        Umean = 10 m/s.
+Friction velocity   Auto-computed from the bulk Reynolds number.
+Solver              foamRun, incompressibleFluid.
+
+Run with:           ./Allrun
+Clean with:         ./Allclean
+
+Notes
+-----
+For a channel-style inlet (walls on two opposing sides, periodic on
+the others) use the geometryMode "channel" instead. For the same
+geometry driven by a target mass flow rate with a compressible
+solver see rectangle_compress_mdot/.

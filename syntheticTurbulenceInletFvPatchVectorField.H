@@ -29,17 +29,56 @@
   Foam::syntheticTurbulenceInletFvPatchVectorField
 
   Description
-  Boundary condition for creating synthetic turbulence at the inlet 
+  Velocity inlet boundary condition for OpenFOAM-12 that generates
+  synthetic turbulent fluctuations consistent with a target
+  Reynolds-stress tensor and integral-length-scale field, using a
+  divergence-free synthetic eddy method (DFSEM).
+
+  The implementation derives from ESI's turbulentDFSEMInlet with three
+  classes of improvement:
+    - equation-level corrections that bring the BC into line with the
+      original DFSEM paper (Poletto, Craft & Revell, 2013);
+    - re-derived normalisation constants that improve the match to DNS
+      reference data (especially near-wall);
+    - a substantially reduced configuration burden through
+      geometry-aware sampling, automatic profile mapping, swirl, ghost
+      eddies, and reproducible RNG.
+
+  Supported geometryMode values: annulus, disk, rectangle, channel
+  (rectangle with PBC in one direction), arbitrary. Bundled DNS
+  profiles (U, R, L) live under URL/, and ready-to-run tutorials for
+  each geometryMode are under tutorials/.
+
+  See documentation/doc_syntheticTurbulence.pdf for the full method
+  description and the complete parameter table.
+
+  If you use this boundary condition in academic work, please cite:
+    1. H. Fyhn, A. Gruber, H. T. Nygard, J. Dawson, and K.-J.
+       Nogenmyr, "Numerical and Experimental Investigation of a
+       Non-Premixed Flame of Partially Decomposed Ammonia at
+       Atmospheric Pressure," Journal of Engineering for Gas Turbines
+       and Power (submitted, 2026).
+    2. H. Fyhn, O. H. H. Meyer, Q. Wang, N. Worth, J. Koomen, T.
+       Dammers, and A. Gruber, "Numerical and Experimental
+       Investigation of a Laboratory-Scale Hydrogen-Fired FlameSheet
+       Burner Operated at Atmospheric Pressure With Full Optical
+       Access," Journal of Engineering for Gas Turbines and Power
+       (submitted, 2026).
 
   Usage
-  Example of the boundary condition specification:
+  Load the library in system/controlDict:
+  \verbatim
+  libs ("libsyntheticTurbulenceInlet.so");
+  \endverbatim
+
+  Minimal patch entry in 0/U:
   \verbatim
   <patchName>
   {
     type            syntheticTurbulenceInlet;
-    value           uniform (0 0 0);    // Initial value
     geometryMode    annulus;
-    Umean           1;
+    massFlowMode    true;
+    massFlow        2.53e-4;
   }
   \endverbatim
 
@@ -76,36 +115,36 @@ namespace Foam
     // Private Data
     
         //friction velocity
-        scalar Utau;
+        scalar Utau_;
 
-        bool UtauIsInDict;
+        bool UtauIsInDict_;
 
-        //scaling factor to go from y to yplus (Utau/nu)
-        scalar Sr;
+        //scaling factor to go from y to yplus (Utau_/nu)
+        scalar Sr_;
 
         //average kinematic viscosity (nu=mu/rho)
-        scalar avNu;
+        scalar avNu_;
 
         //the geometry can be one of these: annulus, disk, rectangle, channel (rectangle with PBC in one direction), arbitrary (the purpose is to generate turbulence that do not need to follow DNS profiles)
-        word geometryMode;
+        word geometryMode_;
         
         //For channel: Are the walls on the long or the short edge? The other direction is assumed to have PBC.
-        word wallLongOrShort;
+        word wallLongOrShort_;
 
-        //when geometryMode is arbitrary, its radius and its center are
-        scalar arbitraryModeRadius; //default largest distance from the patch center
-        vector arbitraryModeCenter; //default centerCoord
-        bool arbitraryModeCenterIsInDict;
+        //when geometryMode_ is arbitrary, its radius and its center are
+        scalar arbitraryModeRadius_; //default largest distance from the patch center
+        vector arbitraryModeCenter_; //default centerCoord_
+        bool arbitraryModeCenterIsInDict_;
 
         //- Mean velocity field
         vectorField U_;
 
-        // Two lengths where length2>length1; radii for annulus and disk, length and height for rectangle and channel;
-        scalar length1;
-        scalar length2;
+        // Two lengths where length2_>length1_; radii for annulus and disk, length and height for rectangle and channel;
+        scalar length1_;
+        scalar length2_;
 
         //the center coordinate
-        vector centerCoord;
+        vector centerCoord_;
         
         //the normal vector of the patch
         vector patchNormal_;
@@ -115,24 +154,24 @@ namespace Foam
         vector inplaneVec2_;
 
         //If user specifies "massFlow" or not (if not, user specifies "Umean")
-        bool massFlowMode;
+        bool massFlowMode_;
 
         //- Normalisation factor for mean velocity or mass flow
-        autoPtr<Function1<scalar>> inFlow;
+        autoPtr<Function1<scalar>> inFlow_;
 
-        //Mean velocity (if inFlow is mass flow, Umean is inFlow/rho/area) 
-        scalar Umean;
+        //Mean velocity (if inFlow_ is mass flow, Umean_ is inFlow_/rho/area) 
+        scalar Umean_;
 
         //- Average velocity from DNS data used for scaling
-        scalar Uavg;
+        scalar Uavg_;
 
         //- Swirl number 
-        scalar swirlNr;
+        scalar swirlNr_;
 
         // Eddy information
-        List<eddy> eddies;
+        List<eddy> eddies_;
 
-        //- Number of eddies that is used simultaniously
+        //- Number of eddies_ that is used simultaniously
         label nEddy_;
 
         //- Characteristic length scale
@@ -145,7 +184,7 @@ namespace Foam
         const scalar kappa_;
 
         //- Normalisation factor for integral-length scale
-        const scalar Lref;
+        const scalar Lref_;
 
         //- Heuristic scaling factor being applied on the normalisation factor
         const scalar scale_;
@@ -166,13 +205,13 @@ namespace Foam
         bool notInitialized_;
 
         //the seed for the random number generator
-        const unsigned int seed_;
+        const label seed_;
 
         //random number generator
-        std::mt19937 randGen;
+        std::mt19937 randGen_;
 
         //Density when incompressible solver is used (default 1)
-        scalar rhoInf;
+        scalar rhoInf_;
 
     public:
 
@@ -230,14 +269,18 @@ namespace Foam
       
       // Get the present mean U
       void updateUmean();
-      
+
+      //- Density on the patch faces: returns the looked-up rho patch field
+      //  if phi is mass flow rate, otherwise a constant field of rhoInf_.
+      tmp<scalarField> rhoOnPatch() const;
+
       //initialize geometry
       void initializeGeometry();
 
       // Get random numbers and intensities and increase random number counter by 1
       void getRandomPositionAndIntensities(vector& pos, vector& intensities);
 
-      void getRandSigmaFromPos(vector pos, symmTensor& R, scalar& sigmax);
+      void getRandSigmaFromPos(const vector& pos, symmTensor& R, scalar& sigmax) const;
 
       //makes a new eddy
       eddy oneEddy(scalar depth); 
@@ -245,14 +288,14 @@ namespace Foam
       // Initiliazing profiles
       void initializeUProfile();
 
-      //- Initialize eddies
+      //- Initialize eddies_
       void initializeEddies();
 
-      //- Convect the eddies with the bulk velocity (Umean)
+      //- Convect the eddies_ with the bulk velocity (Umean_)
       void convectEddies();
 
       // contribution to velocity (U') at a point from all eddies
-      vector uPrimeEddy(vector point);
+      vector uPrimeEddy(const vector& point) const;
 
       //- Update the coefficients associated with the patch field
       virtual void updateCoeffs();

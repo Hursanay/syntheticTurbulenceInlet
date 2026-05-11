@@ -1,0 +1,18 @@
+Disk inlet
+==========
+
+Demonstrates the syntheticTurbulenceInlet on a circular disk inlet
+with a constant area-averaged mean speed (Umean = 10 m/s).
+
+Geometry            Disk (two-block O-grid).
+Inlet target        Umean = 10 m/s.
+Friction velocity   Auto-computed from the bulk Reynolds number.
+Solver              foamRun, incompressibleFluid.
+
+Run with:           ./Allrun
+Clean with:         ./Allclean
+
+Notes
+-----
+Coarse mesh sized for a quick tutorial run. Refine the mesh and extend
+endTime in system/controlDict to develop converged turbulence statistics.

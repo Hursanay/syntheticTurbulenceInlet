@@ -112,6 +112,7 @@ functions
         );
     }
 
+  #includeFunc    patchSurface
   #includeFunc    spanAv_inlet //order: 3.XX,4.XY,5.XZ,6.YY,7.YZ,8.ZZ
   #includeFunc    spanAv_topWall
   #includeFunc    spanAv_bottomWall

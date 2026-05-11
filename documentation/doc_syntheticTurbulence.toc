@@ -1,0 +1,24 @@
+\contentsline {title}{The \textit {syntheticTurbulenceInlet} boundary condition\\ for OpenFoam-12: method and formal description}{1}{section*.2}%
+\contentsline {abstract}{Abstract}{1}{section*.1}%
+\tocdepth@munge 
+\contentsline {section}{\numberline {}Contents}{1}{section*.3}%
+\tocdepth@restore 
+\contentsline {section}{\numberline {I}Introduction}{1}{section*.4}%
+\contentsline {section}{\numberline {II}Method and improvements}{1}{section*.5}%
+\contentsline {subsection}{\numberline {A}Velocity decomposition}{1}{section*.6}%
+\contentsline {subsection}{\numberline {B}Eddy parameters}{2}{section*.7}%
+\contentsline {subsection}{\numberline {C}Eddy shape and fluctuation field}{2}{section*.8}%
+\contentsline {subsection}{\numberline {D}Reynolds-stress mapping}{2}{section*.9}%
+\contentsline {subsection}{\numberline {E}Normalisation constants}{2}{section*.10}%
+\contentsline {subsection}{\numberline {F}Eddy convection and respawn}{3}{section*.11}%
+\contentsline {subsection}{\numberline {G}Mean velocity, Reynolds stress, and length scale from DNS profiles}{3}{section*.12}%
+\contentsline {subsection}{\numberline {H}Friction velocity}{3}{section*.13}%
+\contentsline {subsection}{\numberline {I}Geometry detection and wall distance}{3}{section*.14}%
+\contentsline {subsection}{\numberline {J}Wall-image and periodic ghost eddies}{4}{section*.15}%
+\contentsline {subsection}{\numberline {K}Swirl}{4}{section*.16}%
+\contentsline {subsection}{\numberline {L}Flow-rate enforcement}{4}{section*.17}%
+\contentsline {subsection}{\numberline {M}Reproducible random number generator}{4}{section*.18}%
+\contentsline {section}{\numberline {III}Test results}{4}{section*.19}%
+\contentsline {section}{\numberline {IV}Usage}{5}{section*.20}%
+\contentsline {subsection}{\numberline {A}Setup}{5}{section*.21}%
+\contentsline {section}{\numberline {}References}{6}{section*.22}%

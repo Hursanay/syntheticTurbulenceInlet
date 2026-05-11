@@ -1,17 +1,20 @@
-source $WM_PROJECT_DIR/bin/tools/RunFunctions
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. "${WM_PROJECT_DIR:?}/bin/tools/RunFunctions"      # Tutorial run functions
 
-foamCleanCase
+# Mesh
 runApplication blockMesh
+
+# Initial conditions
+[ -d 0 ] || cp -r 0.orig 0
+
+# Decompose for parallel run (cores set in system/decomposeParDict)
 runApplication decomposePar
 
-#-----------------------------
-# rm log.foamRun
-#rm log.reconstructPar
-#rm -r postProcessing
-# foamListTimes -rm
-# foamListTimes -processor -time 0: -rm
+# Solve
+runParallel "$(getApplication)"
 
-# runParallel `getApplication`
-mpirun -np 12 foamRun -parallel | tee log.foamRun
-# runApplication reconstructPar
+# Reconstruct fields onto a single-process mesh
+runApplication reconstructPar
 
+#------------------------------------------------------------------------------

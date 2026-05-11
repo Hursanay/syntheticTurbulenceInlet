@@ -24,16 +24,9 @@ boundaryField
   inlet
   {
         type            syntheticTurbulenceInlet;
-        geometryMode    channel; //Required; Choose between: an annulus, a disk, a rectangle, and a channel (rectangle with PBC in one direction)
-        wallLongOrShort long; //wall on the long or the short side of the channel
-
-        Umean           17.55; //mean speed in the main flow direction
-        //Utau            -10; // friction velocity; Default: Utau is calculated from the expression for a smooth pipe (the lower limit can be forced by e.g. a negative value)
-        //swirlNr         0.0; //swirl number; Default: 0.
-
-        //d               1; //Ratio of sum of eddy volumes to eddy box volume, i.e. eddy density; Default: 1.
-        //nCellPerEddy    1; //Minimum eddy length in units of number of cells; Default: 1.
-        //scale           1; //Heuristic scaling factor (scales U'); Default: 1.
+        geometryMode    channel;
+        wallLongOrShort long;
+        Umean           17.55;
     }
   
   bottomWall

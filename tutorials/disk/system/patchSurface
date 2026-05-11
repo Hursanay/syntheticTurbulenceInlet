@@ -6,35 +6,31 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 Description
-    Writes out patch surface files with interpolated field data in VTK format.
+    Writes the inlet patch U field to VTK every 1 ms of simulation time so
+    the effect of the syntheticTurbulenceInlet boundary condition can be
+    visualised.
 
 \*---------------------------------------------------------------------------*/
 
-/* #includeEtc "caseDicts/functions/surface/patchSurface.cfg" */
+type                surfaces;
+libs                ("libsampling.so");
 
-// ************************************************************************* //
-type            surfaces;
-libs            ("libsampling.so");
-interpolationScheme   cellPoint;
-surfaceFormat   vtk;
-fields ( U);
-/* fields ( U p T rho k nut H2 H O2 O OH H2O HO2 H2O2 N2 LMA Qdot vorticity); */
-writeControl    adjustableRunTime;
-writeInterval   1e-6;
-writeFields     false;
+interpolationScheme cellPoint;
+surfaceFormat       vtk;
+
+fields              (U);
+
+writeControl        adjustableRunTime;
+writeInterval       1e-3;
+writeFields         false;
+
 surfaces
-  (
+(
     inlet
     {
-        type            patch;
-        patches         (inlet);
-        interpolate     false;
-        /* interpolate     true; */
+        type        patch;
+        patches     (inlet);
     }
-    /* outlet */
-    /* { */
-    /*     type            patch; */
-    /*     patches         (outlet); */
-    /*     interpolate     true; */
-    /* } */
-    );
+);
+
+// ************************************************************************* //
