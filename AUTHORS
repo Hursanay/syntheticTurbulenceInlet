@@ -1,0 +1,40 @@
+Authors and copyright
+=====================
+
+syntheticTurbulenceInlet — a divergence-free synthetic eddy method (DFSEM)
+velocity inlet boundary condition for OpenFOAM-12.
+
+Copyright (C) 2025-2026 Hursanay Fyhn and Eirik Holm Fyhn
+                        SINTEF Energy Research, Trondheim, Norway
+                        hursanay.fyhn@sintef.no
+
+This software extends and corrects the turbulentDFSEMInlet boundary
+condition from OpenFOAM:
+
+    Copyright (C) 2015      OpenFOAM Foundation
+    Copyright (C) 2016-2021 OpenCFD Ltd.
+
+The original turbulentDFSEMInlet implements the method of:
+
+    Poletto, R., Craft, T., & Revell, A.,
+    A new divergence-free synthetic eddy method for the reproduction of
+    inlet flow conditions for LES, Flow, Turbulence and Combustion,
+    91(3), 519-539, 2013. doi:10.1007/s10494-013-9488-2
+
+License
+-------
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>. The full
+license text is provided in the LICENSE file accompanying this
+distribution.
