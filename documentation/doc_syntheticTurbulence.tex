@@ -30,6 +30,7 @@
 \renewcommand{\vec}[1]{\boldsymbol{#1}}
 \newcommand{\dd}{\mathrm{d}}
 \newcommand{\bR}{\mathsf{R}}
+\newcommand{\bQ}{\mathsf{Q}}
 \newcommand{\bT}{\mathsf{T}}
 
 % Highlight marker for "Improvement over..." / "New" comparison blocks.
@@ -50,14 +51,13 @@ This document presents the mathematical formulation of
 OpenFoam-12 that synthesises turbulent fluctuations from a target
 Reynolds-stress tensor and integral-length-scale field using a
 divergence-free synthetic eddy method (DFSEM). The present implementation
-derives from the ESI \textit{turbulentDFSEMInlet}, with three classes of
+derives from the ESI \textit{turbulentDFSEMInlet}, with three types of
 improvement. First, two equation-level corrections bring the boundary
 condition into line with the original DFSEM paper~\cite{PCR2013}, from
-which the inspiration code had deviated. Second, the global normalisation
+which the original DFSEM code had deviated. Second, the global normalisation
 constant is re-derived from the eddy-shape integrals; the new constant
 replaces the per-$\Gamma$ scaling used both in~\cite{PCR2013} and in the
-inspiration code, and yields a substantially improved match to DNS
-reference data, particularly in the near-wall region. Third, the
+original DFSEM code. Third, the
 applicability is broadened through geometry-aware sampling, automatic
 profile mapping, runtime-selectable inlet targets, swirl, periodic and
 wall-image ghost eddies, and reproducible random number generation, all
@@ -77,7 +77,7 @@ the user.
 For scale-resolving simulations such as Large-Eddy Simulation (LES) or
 hybrid RANS--LES, the inlet must supply turbulent fluctuations consistent
 with prescribed turbulence statistics. The Synthetic Eddy Method (SEM)
-realises this by populating a control volume upstream of the inlet (the
+realises this by populating a control volume centred on the inlet (the
 \emph{eddy box}) with $N$ localised eddies. Each eddy carries a length
 scale, a sign vector and a Reynolds-stress signature; their superposed
 contributions on the inlet patch reconstruct an instantaneous velocity
@@ -95,7 +95,7 @@ paper~\cite{PCR2013}. Topics that have no counterpart in either are
 flagged as \emph{new}.
 
 Users employing this boundary condition in academic work are kindly
-asked to cite the two companion papers~\cite{Fyhn2026Ammonia,
+asked to cite the companion papers~\cite{Fyhn2026Ammonia,
 Fyhn2026FlameSheet}, both submitted to the \emph{Journal of Engineering
 for Gas Turbines and Power}.
 
@@ -123,20 +123,24 @@ An eddy $k$ is characterised by:
   \item its centre $\vec x_k = \vec x_{0,k} + x_k\vec n$, where
     $\vec x_{0,k}$ is an in-plane reference position drawn uniformly over
     the patch geometry, $\vec n$ is the patch normal pointing into the
-    domain, and $x_k\in(-\sigma_x^{\max},\sigma_x^{\max})$ is the
+    domain, and $x_k\in(-\sigma_{\max},\sigma_{\max})$ is the
     streamwise offset within the eddy box;
   \item integral-length scales
     $\vec\sigma_k=(\sigma_1,\sigma_2,\sigma_3)_k$ defined in its principal
-    frame, with $\sigma_3=\sigma_x^{\max}$ aligned with the eigenvector of
-    $\bR$ of largest eigenvalue;
+    frame, with $\sigma_3$ the major axis (aligned with the eigenvector
+    of $\bR$ of largest eigenvalue) set by the local integral length
+    scale (\Cref{sec:Umean}), and $\sigma_1=\sigma_2=\sigma_3/\gamma$
+    (\Cref{sec:Rmap}); the patch-wide maximum
+    $\sigma_{\max}=\max_k\sigma_{3,k}$ sets the eddy-box half-depth;
   \item a sign vector $\vec\epsilon_k\in\{-1,+1\}^3$;
-  \item a rotation tensor $\bR_{pg,k}$ from principal to global frame
-    assembled from the eigenvectors of the local Reynolds-stress tensor.
+  \item a rotation matrix $\bQ_k$ from principal to global frame
+    whose columns are the eigenvectors of the local Reynolds-stress
+    tensor $\bR$.
 \end{itemize}
 Eddies are seeded inside the box until the eddy-density target
 $\sum_k V_k / V_0 \ge d$ is reached, with
 $V_k=\tfrac{4}{3}\pi\sigma_1\sigma_2\sigma_3$, eddy-box volume
-$V_0 = 2A\sigma_x^{\max}$, $A$ the inlet area, and $d$ a user parameter
+$V_0 = 2A\sigma_{\max}$, $A$ the inlet area, and $d$ a user parameter
 (default $d=1$).
 
 \subsection{Eddy shape and fluctuation field}\label{sec:uprime}
@@ -145,23 +149,26 @@ For an evaluation point $\vec x$ on the patch and an eddy $k$, define the
 relative position in the eddy principal frame
 \begin{equation}\label{eq:rp}
   \vec r_p
-  = \mathrm{cmptDivide}\!\left(\bR_{pg,k}^{\mathsf T}(\vec x-\vec x_k),
+  = \mathrm{cmptDivide}\!\left(\bQ_k^{\mathsf T}(\vec x-\vec x_k),
     \vec\sigma_k\right).
 \end{equation}
 Eddies with $|\vec r_p|\ge 1$ contribute nothing. Otherwise, the
 fluctuation contribution is
 \begin{equation}\label{eq:uPrime}
-\begin{gathered}
   \vec U'_k(\vec x)
-  = c_{1,k}\,\bR_{pg,k}\,\bigl[\vec q(\vec r_p)\,\times\,\vec\alpha_k\bigr], \\
-  \vec q(\vec r_p) = \vec\sigma_k\,(1-|\vec r_p|^2),
-\end{gathered}
+  = c_{1,k}\,\bQ_k\,
+    (1-|\vec r_p|^2)\,\bigl[\vec\sigma_k\odot(\vec r_p\times\vec\alpha_k)\bigr],
 \end{equation}
-where the cross product is evaluated component-wise with $\vec q$. The
-intensity $\vec\alpha_k$ is determined by the local Reynolds-stress
+where $\odot$ is the Hadamard (component-wise) product and the cross
+product is the standard one. Per component in the eddy principal frame
+this reads
+$\tilde U'_{k,\beta}=c_{1,k}\,(1-|\vec r_p|^2)
+ \sigma_{k,\beta}(\vec r_p\times\vec\alpha_k)_\beta$,
+with the global-frame value $\vec U'_k=\bQ_k\,\vec{\tilde U}'_k$.
+The intensity $\vec\alpha_k$ is determined by the local Reynolds-stress
 signature (\Cref{sec:Rmap}), and the per-eddy and global normalisation
-constants $c_{1,k}$ and $C_2$ are specified in~\Cref{sec:Cconst}. The
-total fluctuation is
+constants $c_{1,k}$ and $C_2$ are specified in~\Cref{sec:Cconst}; their
+values are derived in~\Cref{app:derivation}. The total fluctuation is
 \begin{equation}\label{eq:uPrime_total}
   \vec U'(\vec x) = C_2 \sum_{k=1}^N \vec U'_k(\vec x).
 \end{equation}
@@ -175,7 +182,7 @@ The original DFSEM code normalises the relative position component-wise
 in the \emph{global} frame and only afterwards rotates it into the
 principal frame:
 $\vec r=\mathrm{cmptDivide}(\vec x-\vec x_k,\vec\sigma_k)$ and then
-$\vec r_p=\bR_{pg,k}^{\mathsf T}\vec r$. Because $\vec\sigma_k$ is defined
+$\vec r_p=\bQ_k^{\mathsf T}\vec r$. Because $\vec\sigma_k$ is defined
 per component in the \emph{principal} frame, this mixes axes whenever the
 principal frame is not aligned with the global frame, so the eddy is not
 in fact elongated along its designated major axis. \Cref{eq:rp} rotates
@@ -186,11 +193,13 @@ formulation of~\cite{PCR2013}.
 
 \smallskip\noindent\textit{Scalar versus per-component shape.}
 The original DFSEM code evaluates the shape function component-wise as
-$q_i=\sigma_i(1-r_{p,i}^2)$. Since the eddy is a unit sphere in
-$\vec r_p$-coordinates, the shape function depends only on the scalar
-radius $|\vec r_p|$:
-$q_i=\sigma_i(1-|\vec r_p|^2)$. The scalar form, used
-in~\Cref{eq:uPrime}, also matches~\cite{PCR2013}.
+$q_i=\sigma_i(1-r_{p,i}^2)$, with $r_{p,i}$ the principal-frame
+\emph{components} of the relative position. Since the eddy has unit
+spherical support $|\vec r_p|<1$ (used in the angular integrals
+of~\Cref{app:derivation}), the shape factor must depend on the scalar
+radius $|\vec r_p|$ only:
+$\sigma_i(1-|\vec r_p|^2)$. The scalar form, used in~\Cref{eq:uPrime},
+also matches~\cite{PCR2013}.
 
 \subsection{Reynolds-stress mapping}\label{sec:Rmap}
 
@@ -200,8 +209,9 @@ diagonalised:
   \bR\,\vec e_i = \lambda_i\,\vec e_i,\qquad
   \lambda_1\le\lambda_2\le\lambda_3,
 \end{equation}
-and $\bR_{pg}$ is assembled from the eigenvectors $\vec e_i$. The eddy
-major axis is aligned with $\vec e_3$; the remaining two scales are
+and the principal-to-global rotation $\bQ=[\vec e_1\;\vec e_2\;\vec e_3]$
+satisfies $\bQ^{\mathsf T}\,\bR\,\bQ=\mathrm{diag}(\lambda_1,\lambda_2,\lambda_3)$.
+The eddy major axis is aligned with $\vec e_3$; the remaining two scales are
 linked by an isotropy ratio $\gamma$ chosen from
 $\{1,\sqrt2,\dots,\sqrt8\}$:
 \begin{equation}\label{eq:gamma}
@@ -219,6 +229,11 @@ diagonalised second-moment constraint:
 with sign assignment
 $\alpha_\beta\leftarrow\epsilon_\beta\sqrt{\alpha_\beta^2}$. If any
 $\alpha_\beta^2<0$ for the trial $\gamma$, the next value is tried.
+After a successful assignment, the trial list is reordered by the
+fixed 8-cycle permutation $[2,8,6,7,4,5,1,3]$ so that successive eddies start
+their search from different $\gamma$ values; this deterministically
+distributes the isotropy ratios across the ensemble without an extra
+random draw.
 
 The local $\bR$ itself is sampled from a wall-normal lookup table at the
 seed point's wall distance and rotated from the wall-aligned frame
@@ -229,12 +244,6 @@ $(\vec u,\vec v,\vec w)$ to the global frame:
 \end{equation}
 where $\vec u=\vec n$, $\vec v$ is the unit vector pointing from the
 seed toward the nearest wall, and $\vec w=\vec u\times\vec v$.
-
-\Cref{eq:alpha} has the same numerator as the original DFSEM code's
-$\sum_i\lambda_i/\sigma_i^2 - 2\lambda_\beta/\sigma_\beta^2$. The
-per-$\Gamma$ scalar prefactor $1/(2C_2(\Gamma))$ that appears in the
-original (and in the paper) is absorbed into the single global constant
-of~\Cref{sec:Cconst}.
 
 \subsection{Normalisation constants}\label{sec:Cconst}
 
@@ -251,7 +260,7 @@ and
   \boxed{\;
   C_2 \;=\; s\;\sqrt{\frac{315}{16}\,\frac{V_0}{N}}\;}
 \end{equation}
-where $s$ is a user-tuneable safety prefactor (default $s=1$) retained
+where $s$ is a user-tuneable scaling prefactor (default $s=1$) retained
 for empirical adjustment.
 
 \improv{Improvement over the original DFSEM code and the paper.}
@@ -263,32 +272,28 @@ $1/(2C_2)$ scaling on the squared principal-frame intensity. Together
 these reproduce the normalisation reported in~\cite{PCR2013} (Eq.~11 and
 Table~1 there) exactly. We re-derived the variance-matching constraint
 from the eddy-shape integrals and obtained different scaling factors:
-the per-eddy constant becomes the geometric weight \Cref{eq:c1}, the
-per-$\Gamma$ table is removed (it is absorbed into the global factor as
-noted in~\Cref{sec:Rmap}), and the global constant
+the per-eddy constant becomes the geometric weight \eqref{eq:c1}, the
+per-$\Gamma$ table is removed and is absorbed into the global factor, and the global constant
 becomes~\Cref{eq:C2}. The rederived prefactor on $\sqrt{V_0/N}$ is
 $\sqrt{315/16}\approx 4.44$, against the original DFSEM code value
-$\sqrt{10}\approx 3.16$. The new constants give a substantially better
-match to the DNS reference data, particularly in the near-wall region
-(\Cref{sec:results}).
+$\sqrt{10}\approx 3.16$.
 
 \subsection{Eddy convection and respawn}\label{sec:convect}
 
 Each time step the eddies are translated downstream by $\Delta t\,\bar U$.
-Eddies whose streamwise offset exceeds $\sigma_x^{\max}$ are respawned
+Eddies whose streamwise offset exceeds $\sigma_{\max}$ are respawned
 with new random in-plane positions and intensities, and a streamwise
 offset
 \begin{equation}\label{eq:respawn}
   x_k^{\mathrm{new}}
-    = x_k - 2\bigl\lfloor x_k/\sigma_x^{\max}\bigr\rfloor\,\sigma_x^{\max}
-    \in (-\sigma_x^{\max},\sigma_x^{\max}).
+    = x_k - 2\bigl\lfloor x_k/\sigma_{\max}\bigr\rfloor\,\sigma_{\max}.
 \end{equation}
 
 \improv{Improvement over the original DFSEM code.}
 The original DFSEM code respawns at
-$x^{\mathrm{new}}=x-\lfloor x/\sigma_x^{\max}\rfloor\sigma_x^{\max}\in[0,\sigma_x^{\max})$.
+$x^{\mathrm{new}}=x-\lfloor x/\sigma_{\max}\rfloor\sigma_{\max}\in[0,\sigma_{\max})$.
 Although the initial seeding samples
-$(-\sigma_x^{\max},\sigma_x^{\max})$, the steady-state distribution
+$(-\sigma_{\max},\sigma_{\max})$, the steady-state distribution
 collapses after a transient to the upstream half of the box only.
 \Cref{eq:respawn} respawns symmetrically across the full box, preserving
 the original distribution and removing the transient bias.
@@ -311,12 +316,25 @@ area-averaged target speed, and $U_{\mathrm{avg}}=\int U^+\,\dd A/A$
 normalises the profile so that the flux constraint yields $\bar U$
 before fluctuations are added. The Reynolds-stress tensor $\bR$ and
 integral-length scale $L$ are sampled from analogous tables at the same
-$y^+$.
+$y^+$, with the table value $L^+$ converted to a physical length by
+$L = L^+\,\nu/(U_\tau\,\mathtt{Lref})$, where \texttt{Lref} is a
+user-tunable rescaling (default 1).
+
+The major-axis length $\sigma_3$ assigned to each seeded eddy follows
+from this local $L$ by clipping against the mixing-length cap and a
+grid-resolution floor:
+\begin{equation}\label{eq:sigma3}
+  \sigma_3 \;=\; \mathrm{clip}\bigl(|L|;\;
+    \texttt{nCellPerEddy}\cdot\Delta_{\max},\;\kappa\delta\bigr),
+\end{equation}
+with $\kappa=0.41$, $\delta$ the half wall-to-wall distance, and
+$\Delta_{\max}$ is the longest characteristic dimension over all patch-adjacent cells.
 
 \improv{New.}
-DNS reference profiles for $U(y^+)$, $L(y^+)$ and the six components of
+DNS reference profiles for $U^+(y^+)$, $L^+(y^+)$ and the six components of
 $\bR(y^+)$ are bundled with the source. The original DFSEM code requires the
-user to supply these as \texttt{PatchFunction1} entries; here the user
+user to supply these as \texttt{PatchFunction1} entries.
+Here the user
 needs to supply only the inlet target ($\bar U$ or $\dot m$) and,
 optionally, $U_\tau$, with spatial profiles recovered automatically.
 
@@ -362,15 +380,18 @@ distance to the nearest wall:
 \begin{itemize}[noitemsep]
   \item annulus: $\min(r-\ell_1,\,\ell_2-r)$;
   \item disk: $\ell_2-r$;
-  \item rectangle: $\min(\ell_1/2-|l_1|,\,\ell_2/2-|l_2|)$, where
-    $l_i=(\vec x-\vec x_c)\cdot\vec e_i$;
-  \item channel: $\ell_i/2-|l_i|$ for the wall-bounded direction.
+  \item rectangle: $\min(\ell_1/2-|\xi_1|,\,\ell_2/2-|\xi_2|)$, where
+    $\xi_i=(\vec x-\vec x_c)\cdot\vec e_i$ are the signed in-plane
+    offsets from the patch centre along $\vec e_1$ (the short axis,
+    $\ell_1\le\ell_2$) and $\vec e_2$ (the long axis);
+  \item channel: $\ell_i/2-|\xi_i|$ for the wall-bounded direction
+    ($i=1$ if \texttt{wallLongOrShort=long}, $i=2$ otherwise).
 \end{itemize}
 The first four modes provide wall-aware sampling that is consistent with
 the DNS lookup tables of~\Cref{sec:Umean}; the \texttt{arbitrary} mode
 generates fluctuations on patches that do not match a canonical shape,
 using uniform mean velocity and constant $\bR$, $L$ from the outermost
-table row.
+table row, corresponding to the channel centreline of the reference dataset.
 
 \improv{New.}
 The original DFSEM code is geometry-agnostic and requires the user to supply
@@ -418,7 +439,9 @@ in which case~\Cref{eq:SwirlNr,eq:utheta} yield
     \frac{\displaystyle\int_{r_i}^{r_o}\rho\,u_x^2\,r\,\dd r}
          {\displaystyle\int_{r_i}^{r_o}\rho\,u_x^2\,r^3\,\dd r}.
 \end{equation}
-Discretely, the integrals become face sums weighted by $|\vec S_f|$.
+The integrals are evaluated as face sums weighted by $|\vec S_f|$,
+the face area vector (magnitude equal to face area, direction along the
+outward normal).
 
 \improv{New.}
 Not present in the original DFSEM code.
@@ -460,9 +483,11 @@ The Mersenne Twister generator is seeded from a user-supplied integer
 (default 536), independently of process rank.
 
 \improv{New.}
-The original DFSEM code seeds from the process rank only, which makes runs
-non-reproducible across decompositions. The user-supplied seed makes
-runs bit-reproducible at fixed decomposition.
+The original DFSEM code seeds from the process rank only, so the eddy
+ensemble depends on the rank assignment: changing the number of MPI
+processes or the partitioning gives a statistically different ensemble.
+The user-supplied seed used here is identical on every process, so the
+eddy ensemble is the same regardless of decomposition.
 
 %%==============================================================================
 \section{Test results}\label{sec:results}
@@ -471,7 +496,7 @@ runs bit-reproducible at fixed decomposition.
 \Cref{fig:URL_x} shows time-averaged turbulence statistics measured
 along streamwise lines at several stations downstream of the inlet for a
 canonical channel flow. Profiles develop rapidly toward the DNS target
-within a few integral scales of the inlet. The new normalisation
+The new normalisation
 constant in~\Cref{eq:C2} is the dominant contribution to the improved
 match relative to the original DFSEM code.
 
@@ -486,8 +511,6 @@ match relative to the original DFSEM code.
 %%==============================================================================
 \section{Usage}\label{sec:usage}
 %%==============================================================================
-
-\subsection{Setup}\label{sec:setup}
 
 Once the source repository has been obtained:
 \begin{enumerate}[noitemsep]
@@ -508,6 +531,7 @@ condition.
 
 \begin{table*}[ht]
 \centering
+\caption{Dictionary entries accepted by \texttt{syntheticTurbulenceInlet}.}
 \small
 \begin{tabular}{@{}lll p{0.42\textwidth}@{}}
 \toprule
@@ -554,7 +578,6 @@ Key & Type & Default & Description \\
   in~\Cref{eq:fCorr}.\\
 \bottomrule
 \end{tabular}
-\caption{Dictionary entries accepted by \texttt{syntheticTurbulenceInlet}.}
 \label{tab:params}
 \end{table*}
 
@@ -572,7 +595,204 @@ inlet\\
 \end{minipage}
 
 %%==============================================================================
-\noindent\begin{minipage}{\columnwidth}
+\appendix
+\section{Derivation of the principal-frame intensity and normalisation constants}\label{app:derivation}
+%%==============================================================================
+
+This appendix shows that the principal-frame
+intensity~\Cref{eq:alpha}, together with the constants $c_{1,k}$
+in~\Cref{eq:c1} and $C_2$ in~\Cref{eq:C2}, are the unique choice that
+makes the eddy ensemble reproduce the target Reynolds tensor $\bR$.
+
+The derivation works entirely in the eddy principal frame. The global
+second moment is the orthogonal similarity
+\begin{equation}\label{eq:app_rotation}
+  \langle u'_i u'_j\rangle
+   = \bQ_{ik}\,\langle\tilde u'_k\tilde u'_l\rangle\,\bQ^{\mathsf T}_{lj},
+\end{equation}
+so requiring
+$\langle\tilde u'_a\tilde u'_b\rangle=\lambda_a\delta_{ab}$ in the
+principal frame is equivalent to recovering $\bR$ in the global frame,
+with $\lambda_1\le\lambda_2\le\lambda_3$ the eigenvalues
+of~\Cref{eq:Reig}.
+
+\paragraph*{Starting ansatz.}
+Write the principal-frame fluctuation in terms of a single, as-yet-unfixed
+per-eddy intensity $\tilde{\vec\alpha}^k$ that absorbs all the eventual
+normalisation:
+\begin{equation}\label{eq:app_ansatz}
+\begin{gathered}
+  \tilde u'_\beta(\vec x) = \sum_{k=1}^N
+    \sigma_{\beta}^k\, q(d^k)\,
+    (\vec r_p^{\,k}\times\tilde{\vec\alpha}^k)_\beta, \\
+  q(d) =
+    \begin{cases}1-d^2 & d<1,\\ 0 & d\ge 1,\end{cases}
+\end{gathered}
+\end{equation}
+with $d^k=|\vec r_p^{\,k}|$ and $\vec r_p^{\,k}$ from~\Cref{eq:rp}. The
+tilde marks $\tilde{\vec\alpha}$ as the variable used inside this
+appendix's bookkeeping; once the variance-matching constraint determines
+it, the geometric prefactor is extracted into $c_{1,k}$ and $C_2$ and the
+tilde is dropped to recover the clean $\vec\alpha$ of the main text
+(\Cref{eq:alpha}). The $\vec\sigma^k$ and $|\tilde{\vec\alpha}^k|$ are
+fixed for each eddy and only the signs of the three components of
+$\tilde{\vec\alpha}^k$ are random (independent and uniform over
+$\{-1,+1\}^3$, both within an eddy and across eddies).
+
+\paragraph*{Sign average.}
+Let $\langle\cdot\rangle_\alpha$ denote averaging over the random signs.
+Component-wise sign independence gives
+$\langle\tilde\alpha_i^k\tilde\alpha_j^l\rangle_\alpha
+   = \delta_{kl}\delta_{ij}(\tilde\alpha_i^k)^2$.
+Applied to the $x$-component of~\Cref{eq:app_ansatz} squared, the cross
+terms between $\tilde\alpha_y$ and $\tilde\alpha_z$ vanish and the
+diagonal in $kl$ collapses the double sum:
+\begin{equation}\label{eq:app_after_sign}
+\begin{aligned}
+  \langle\tilde u'_x\tilde u'_x\rangle_\alpha
+  = \sum_k (\sigma_x^k)^2\,\bigl[q(d^k)\bigr]^2\,&\bigl[(r_{p,y}^k)^2(\tilde\alpha_z^k)^2 \\[-0.4em]
+  & + (r_{p,z}^k)^2(\tilde\alpha_y^k)^2\bigr].
+\end{aligned}
+\end{equation}
+
+\paragraph*{Position average.}
+Let $\langle\cdot\rangle_r$ denote averaging over uniform eddy positions
+in the eddy box of volume $V_0=2A\sigma_{\max}$. Assume further that
+$\vec\sigma^k$ and $|\tilde{\vec\alpha}^k|$ are slowly varying on the
+scale of an eddy, so they may be evaluated at the field point and
+pulled outside the position integral; this is exact only when eddies are
+much smaller than the scales over which $\bR$ and $L$ vary. Then all
+$N$ terms in~\Cref{eq:app_after_sign} are statistically identical and
+the sum collapses to $N$ times one position integral:
+\begin{equation}\label{eq:app_after_pos}
+  \langle\tilde u'_x\tilde u'_x\rangle
+  = \frac{N\sigma_x^2}{V_0}\!\int_{V_0}\!\dd^3 x_k\,
+    [q(d)]^2
+    \bigl(r_{p,y}^2\tilde\alpha_z^2 + r_{p,z}^2\tilde\alpha_y^2\bigr).
+\end{equation}
+
+\paragraph*{Change of variables and angular integration.}
+Using $r_{p,i}=(x_{k,i}-x_{p,i})/\sigma_i$ componentwise,
+$\dd^3 x_k = \sigma_x\sigma_y\sigma_z\,\dd^3 r_p$, and the integrand is
+supported on $|\vec r_p|<1$. In spherical coordinates $(r,\theta,\phi)$ with
+$r_{p,y}=r\sin\theta\sin\phi$ and $r_{p,z}=r\cos\theta$,
+\begin{equation}\label{eq:app_polar}
+\begin{aligned}
+  \langle\tilde u'_x\tilde u'_x\rangle
+  &= \frac{N\sigma_x^2\,\sigma_x\sigma_y\sigma_z}{V_0}
+     \!\int_0^1\!r^4(1-r^2)^2\dd r\\
+  &\quad\times\!\int_0^\pi\!\sin\theta\dd\theta\!\int_0^{2\pi}\!\dd\phi
+       \bigl(\tilde\alpha_z^2\sin^2\theta\sin^2\phi
+            + \tilde\alpha_y^2\cos^2\theta\bigr).
+\end{aligned}
+\end{equation}
+With
+\begin{align}
+  \int_0^1\!r^4(1-r^2)^2\,\dd r &= \tfrac{8}{315}, \label{eq:app_int_radial}\\
+  \int_0^\pi\!\sin^3\theta\,\dd\theta\!\int_0^{2\pi}\!\sin^2\phi\,\dd\phi
+    &= \tfrac{4}{3}\,\pi, \label{eq:app_int_ang1}\\
+  \int_0^\pi\!\sin\theta\cos^2\theta\,\dd\theta\!\int_0^{2\pi}\!\dd\phi
+    &= \tfrac{2}{3}\,(2\pi), \label{eq:app_int_ang2}
+\end{align}
+both angular integrals reduce to $4\pi/3$ and \Cref{eq:app_polar}
+becomes
+\begin{equation}\label{eq:app_match}
+  \langle\tilde u'_x\tilde u'_x\rangle
+   = \underbrace{\frac{8}{315}\,\frac{N V_e}{V_0}\,\sigma_x^2}_{\displaystyle\equiv\, \tilde C_x}
+    (\tilde\alpha_y^2+\tilde\alpha_z^2) \;\stackrel{!}{=}\; \lambda_x,
+\end{equation}
+where $V_e=\tfrac{4}{3}\pi\sigma_x\sigma_y\sigma_z$ is the eddy
+ellipsoid volume.
+
+\paragraph*{Off-diagonal cross-correlations.}
+For \Cref{eq:app_match} to suffice it must also be the case that
+$\langle\tilde u'_i\tilde u'_j\rangle=0$ for $i\ne j$ (otherwise the
+matching condition is incomplete). Consider $\langle\tilde u'_x\tilde
+u'_y\rangle$. Expanding
+$\tilde u'_x=\sum_k\sigma_x^k q^k(r_{p,y}^k\tilde\alpha_z^k-r_{p,z}^k\tilde\alpha_y^k)$
+and the analogue with $\sigma_y^k$ for $\tilde u'_y$, the
+product expands into four bilinears in components of $\vec{\tilde\alpha}$.
+Three mix \emph{distinct} components
+($\tilde\alpha_z\tilde\alpha_x$, $\tilde\alpha_y\tilde\alpha_x$,
+$\tilde\alpha_y\tilde\alpha_z$) and vanish under the sign average; only
+the bilinear in $\tilde\alpha_z\tilde\alpha_z$ survives. After the sign
+average collapses $kl\to k$ this leaves
+\begin{equation}\label{eq:app_offdiag_survive}
+  \langle\tilde u'_x\tilde u'_y\rangle_\alpha
+  = -\sum_k\sigma_x^k\sigma_y^k[q(d^k)]^2
+       r_{p,x}^k\,r_{p,y}^k\,(\tilde\alpha_z^k)^2.
+\end{equation}
+Position-averaging with the same slowly-varying assumption and
+$r_{p,x}=r\sin\theta\cos\phi$, $r_{p,y}=r\sin\theta\sin\phi$:
+\begin{equation}\label{eq:app_offdiag}
+\begin{aligned}
+  \langle\tilde u'_x\tilde u'_y\rangle
+  &= -\frac{N\sigma_x\sigma_y\sigma_x\sigma_y\sigma_z\,\tilde\alpha_z^2}{V_0}
+     \!\int_0^1\!r^4(1-r^2)^2\dd r\\
+  &\quad\times\!\int_0^\pi\!\sin^3\theta\dd\theta\!\int_0^{2\pi}\!\sin\phi\cos\phi\,\dd\phi.
+\end{aligned}
+\end{equation}
+The azimuthal integral $\int_0^{2\pi}\sin\phi\cos\phi\,\dd\phi=0$, so
+$\langle\tilde u'_x\tilde u'_y\rangle=0$. By cyclic symmetry the same
+applies to $\langle\tilde u'_y\tilde u'_z\rangle$ and
+$\langle\tilde u'_z\tilde u'_x\rangle$, so the principal-frame second
+moment is exactly diagonal and~\Cref{eq:app_match} together with its
+$y,z$-analogues fully fix $\bR$.
+
+\paragraph*{Inversion.}
+Identical calculations for $\langle\tilde u'_y\tilde u'_y\rangle$ and
+$\langle\tilde u'_z\tilde u'_z\rangle$ give a $3\times3$ linear system
+in $\tilde\alpha_x^2,\tilde\alpha_y^2,\tilde\alpha_z^2$,
+\begin{equation}\label{eq:app_system}
+  \begin{pmatrix} 0 & 1 & 1 \\ 1 & 0 & 1 \\ 1 & 1 & 0 \end{pmatrix}
+  \begin{pmatrix}\tilde\alpha_x^2\\\tilde\alpha_y^2\\\tilde\alpha_z^2\end{pmatrix}
+  =
+  \begin{pmatrix}\lambda_x/\tilde C_x\\\lambda_y/\tilde C_y\\\lambda_z/\tilde C_z\end{pmatrix},
+\end{equation}
+with inverse
+\begin{equation}\label{eq:app_inverse}
+  \frac{1}{2}\begin{pmatrix}-1 & 1 & 1\\ 1 & -1 & 1\\ 1 & 1 & -1\end{pmatrix}.
+\end{equation}
+Substituting $1/\tilde C_i = \tfrac{315\,V_0}{8\,N\,V_e\,\sigma_i^2}$
+gives, for $\beta\in\{x,y,z\}$,
+\begin{equation}\label{eq:app_alphasq}
+  \tilde\alpha_\beta^2 = \frac{315\,V_0}{16\,N\,V_e}
+  \!\left[-\frac{\lambda_\beta}{\sigma_\beta^2}
+        + \frac{\lambda_{\beta+1}}{\sigma_{\beta+1}^2}
+        + \frac{\lambda_{\beta+2}}{\sigma_{\beta+2}^2}\right],
+\end{equation}
+indices taken cyclically.
+
+\paragraph*{Rebaptisation.}
+The geometric prefactor in~\Cref{eq:app_alphasq} factorises into a
+per-eddy piece and a global piece. Writing
+$\tilde\alpha_\beta^k = C_2\,c_{1,k}\,\alpha_\beta^k$ with
+\begin{equation}\label{eq:app_rebaptize}
+  c_{1,k} = \frac{1}{\sqrt{V_e^k}},\qquad
+  C_2 = \sqrt{\frac{315}{16}\,\frac{V_0}{N}},
+\end{equation}
+splits off the clean (tilde-free) intensity
+\begin{equation}\label{eq:app_alpha_clean}
+  \alpha_\beta = \!\left[-\frac{\lambda_\beta}{\sigma_\beta^2}
+       + \frac{\lambda_{\beta+1}}{\sigma_{\beta+1}^2}
+       + \frac{\lambda_{\beta+2}}{\sigma_{\beta+2}^2}\right]^{1/2},
+\end{equation}
+which is~\Cref{eq:alpha}. Substituting back into~\Cref{eq:app_ansatz},
+the global $C_2$ pulls out of the eddy sum and the per-eddy $c_{1,k}$
+remains inside:
+\begin{equation}\label{eq:app_final}
+  \tilde u'_\beta(\vec x)
+  = C_2 \sum_{k=1}^N c_{1,k}\,\sigma_\beta^k\,q(d^k)\,
+    (\vec r_p^{\,k}\times\vec\alpha^k)_\beta,
+\end{equation}
+which, on rotation by~\Cref{eq:app_rotation}, reproduces
+\Cref{eq:uPrime,eq:uPrime_total} exactly. The constants
+in~\Cref{eq:c1,eq:C2} are therefore uniquely fixed by the
+variance-matching constraint and the eddy-shape integrals; the
+user-tunable prefactor $s$ in~\Cref{eq:C2} is a scale parameter
+that can be used to alter the turbulence intensity.
+
+%%==============================================================================
 \begin{thebibliography}{9}
 \bibitem{PCR2013}
   Poletto, R., Craft, T., \& Revell, A.,
@@ -595,6 +815,5 @@ inlet\\
   Journal of Engineering for Gas Turbines and Power (submitted, 2026).
 
 \end{thebibliography}
-\end{minipage}
 
 \end{document}
