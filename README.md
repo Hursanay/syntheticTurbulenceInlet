@@ -23,7 +23,7 @@ Hursanay Fyhn and Eirik Holm Fyhn — SINTEF Energy Research
 ## Citation
 
 If you use `syntheticTurbulenceInlet` in academic work, please cite the
-following two papers (both submitted to *Journal of Engineering for Gas
+following papers (both submitted to *Journal of Engineering for Gas
 Turbines and Power*):
 
 1. H. Fyhn, A. Gruber, H. T. Nygård, J. Dawson, and K.-J. Nogenmyr,
