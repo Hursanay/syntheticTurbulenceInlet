@@ -23,6 +23,7 @@
 # OpenFOAM build outputs
 linux*Opt/
 linux*Debug/
+lnInclude/
 
 # Editor / OS junk
 *~
