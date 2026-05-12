@@ -22,9 +22,7 @@ Hursanay Fyhn and Eirik Holm Fyhn — SINTEF Energy Research
 
 ## Citation
 
-If you use `syntheticTurbulenceInlet` in academic work, please cite the
-following papers (both submitted to *Journal of Engineering for Gas
-Turbines and Power*):
+If you are writing academic publications using `syntheticTurbulenceInlet`, please cite one or more of the following articles:
 
 1. H. Fyhn, A. Gruber, H. T. Nygård, J. Dawson, and K.-J. Nogenmyr,
    "Numerical and Experimental Investigation of a Non-Premixed Flame
