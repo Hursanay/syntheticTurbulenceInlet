@@ -6,12 +6,16 @@ tensor and integral-length-scale field, using a divergence-free synthetic
 eddy method (DFSEM).
 
 The implementation derives from ESI's `turbulentDFSEMInlet` with three
-classes of improvement: equation-level corrections that bring the BC into
-line with the original DFSEM paper (Poletto, Craft & Revell, 2013),
-re-derived normalisation constants that improve the match to DNS
-reference data (especially near-wall), and a substantially reduced
-configuration burden through geometry-aware sampling, automatic profile
-mapping, swirl, ghost eddies, and reproducible RNG.
+types of improvement. Two equation-level corrections bring the boundary
+condition into line with the original DFSEM paper (Poletto, Craft &
+Revell, 2013), from which the original DFSEM code had deviated. The
+global normalisation constant is re-derived from the eddy-shape
+integrals, replacing the per-Γ scaling used in both the paper and the
+original code. Applicability is broadened through geometry-aware
+sampling, automatic profile mapping, runtime-selectable inlet targets,
+swirl, periodic and wall-image ghost eddies, and reproducible RNG. The
+combined effect is improved fidelity and a substantially reduced
+configuration burden.
 
 See `documentation/doc_syntheticTurbulence.pdf` for the full method description.
 
