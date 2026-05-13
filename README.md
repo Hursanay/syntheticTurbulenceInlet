@@ -5,6 +5,8 @@ synthetic turbulent fluctuations consistent with a target Reynolds-stress
 tensor and integral-length-scale field, using a divergence-free synthetic
 eddy method (DFSEM).
 
+![Synthetic swirling turbulent inflow at the annulus inlet — velocity magnitude on the full geometry alongside a cross-section coloured by the z-component of velocity](figures/annulus_finer_combined_umag_clipuz_10s.gif)
+
 The implementation derives from ESI's `turbulentDFSEMInlet` with three
 types of improvement. Two equation-level corrections bring the boundary
 condition into line with the original DFSEM paper (Poletto, Craft &
