@@ -57,13 +57,13 @@
        Nogenmyr, "Numerical and Experimental Investigation of a
        Non-Premixed Flame of Partially Decomposed Ammonia at
        Atmospheric Pressure," Journal of Engineering for Gas Turbines
-       and Power (submitted, 2026).
+       and Power (accepted, 2026).
     2. H. Fyhn, O. H. H. Meyer, Q. Wang, N. Worth, J. Koomen, T.
        Dammers, and A. Gruber, "Numerical and Experimental
        Investigation of a Laboratory-Scale Hydrogen-Fired FlameSheet
        Burner Operated at Atmospheric Pressure With Full Optical
        Access," Journal of Engineering for Gas Turbines and Power
-       (submitted, 2026).
+       (accepted, 2026).
 
   Usage
   Load the library in system/controlDict:
