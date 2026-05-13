@@ -33,13 +33,13 @@ If you are writing academic publications using `syntheticTurbulenceInlet`, pleas
 1. H. Fyhn, A. Gruber, H. T. Nygård, J. Dawson, and K.-J. Nogenmyr,
    "Numerical and Experimental Investigation of a Non-Premixed Flame
    of Partially Decomposed Ammonia at Atmospheric Pressure," *Journal
-   of Engineering for Gas Turbines and Power* (submitted, 2026).
+   of Engineering for Gas Turbines and Power* (accepted, 2026).
 
 2. H. Fyhn, O. H. H. Meyer, Q. Wang, N. Worth, J. Koomen, T. Dammers,
    and A. Gruber, "Numerical and Experimental Investigation of a
    Laboratory-Scale Hydrogen-Fired *FlameSheet*™ Burner Operated at
    Atmospheric Pressure With Full Optical Access," *Journal of
-   Engineering for Gas Turbines and Power* (submitted, 2026).
+   Engineering for Gas Turbines and Power* (accepted, 2026).
 
 ## Requirements
 
