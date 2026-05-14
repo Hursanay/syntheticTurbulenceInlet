@@ -39,7 +39,7 @@
 \begin{document}
 
 \title{The \textit{syntheticTurbulenceInlet} boundary condition\\
-       for OpenFoam-12: method and formal description}
+       for OpenFoam-13: method and formal description}
 \author{Hursanay Fyhn and Eirik Holm Fyhn}
 \affiliation{SINTEF Energy Research}
 \email{hursanay.fyhn@sintef.no}
@@ -48,7 +48,7 @@
 \begin{abstract}
 This document presents the mathematical formulation of
 \textit{syntheticTurbulenceInlet}, a velocity inlet boundary condition for
-OpenFoam-12 that synthesises turbulent fluctuations from a target
+OpenFoam-13 that synthesises turbulent fluctuations from a target
 Reynolds-stress tensor and integral-length-scale field using a
 divergence-free synthetic eddy method (DFSEM). The present implementation
 derives from the ESI \textit{turbulentDFSEMInlet}, with three types of
@@ -514,7 +514,7 @@ match relative to the original DFSEM code.
 
 Once the source repository has been obtained:
 \begin{enumerate}[noitemsep]
-  \item Source your local OpenFOAM-12 environment as usual
+  \item Source your local OpenFOAM-13 environment as usual
     (e.g.\ \texttt{source etc/bashrc} in your OpenFOAM tree).
   \item Compile the boundary condition with \texttt{wmake} from the
     project root.

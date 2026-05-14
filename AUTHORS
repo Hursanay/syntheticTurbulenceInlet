@@ -2,7 +2,7 @@ Authors and copyright
 =====================
 
 syntheticTurbulenceInlet — a divergence-free synthetic eddy method (DFSEM)
-velocity inlet boundary condition for OpenFOAM-12.
+velocity inlet boundary condition for OpenFOAM-13.
 
 Copyright (C) 2025-2026 Hursanay Fyhn and Eirik Holm Fyhn
                         SINTEF Energy Research, Trondheim, Norway

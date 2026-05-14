@@ -29,7 +29,7 @@
   Foam::syntheticTurbulenceInletFvPatchVectorField
 
   Description
-  Velocity inlet boundary condition for OpenFOAM-12 that generates
+  Velocity inlet boundary condition for OpenFOAM-13 that generates
   synthetic turbulent fluctuations consistent with a target
   Reynolds-stress tensor and integral-length-scale field, using a
   divergence-free synthetic eddy method (DFSEM).

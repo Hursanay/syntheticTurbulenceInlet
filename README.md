@@ -1,6 +1,6 @@
 # syntheticTurbulenceInlet
 
-A velocity inlet boundary condition for **OpenFOAM-12** that generates
+A velocity inlet boundary condition for **OpenFOAM-13** that generates
 synthetic turbulent fluctuations consistent with a target Reynolds-stress
 tensor and integral-length-scale field, using a divergence-free synthetic
 eddy method (DFSEM).
@@ -47,7 +47,7 @@ If you are writing academic publications using `syntheticTurbulenceInlet`, pleas
 
 ## Build
 
-From the repository root, with your OpenFOAM-12 environment sourced:
+From the repository root, with your OpenFOAM-13 environment sourced:
 
 ```bash
 wmake
