@@ -22,7 +22,7 @@ boundaryField
 {
     inlet            { type calculated; value $internalField;}
     outlet           { type zeroGradient;}
-    walls            { type nutkWallFunction; value $internalField;}
+    walls            { type zeroGradient;}
 
     "procBoundary.*"
     {

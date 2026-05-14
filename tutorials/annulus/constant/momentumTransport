@@ -18,7 +18,7 @@ simulationType LES;
 
 LES
 {
-    model           WALE;
+    model           Smagorinsky;
 
     turbulence      on;
 

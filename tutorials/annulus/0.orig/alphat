@@ -8,40 +8,27 @@
 FoamFile
 {
     format      ascii;
-    class       dictionary;
-    location    "constant";
-    object      physicalProperties;
+    class       volScalarField;
+    location    "0";
+    object      alphat;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-thermoType
-{
-    type            hePsiThermo;
-    mixture         pureMixture;
-    transport       const;
-    thermo          eConst;
-    equationOfState perfectGas;
-    specie          specie;
-    energy          sensibleInternalEnergy;
-}
+dimensions      [1 -1 -1 0 0 0 0];
 
-mixture
+internalField   uniform 0;
+
+boundaryField
 {
-    specie
+    inlet            { type zeroGradient; }
+    outlet           { type zeroGradient; }
+    walls            { type zeroGradient; }
+
+    "procBoundary.*"
     {
-        molWeight   28.9;
-    }
-    thermodynamics
-    {
-        Cv          712;
-        hf          0;
-    }
-    transport
-    {
-        mu          1.8e-05;
-        Pr          0.7;
+        type processor;
+        value $internalField;
     }
 }
-
 
 // ************************************************************************* //

@@ -16,45 +16,49 @@ FoamFile
 
 solvers
 {
-    p
+    "(p|rho)"
     {
-        solver          GAMG;
-        tolerance       0;
-        relTol          0.1;
-        smoother        GaussSeidel;
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-6;
+        relTol          0.01;
     }
 
-    pFinal
+    "(p|rho)Final"
     {
         $p;
-        smoother        DICGaussSeidel;
-        tolerance       1e-06;
         relTol          0;
     }
 
-    "(U|k|nuTilda)"
+    "(U|e|k)"
     {
         solver          smoothSolver;
         smoother        symGaussSeidel;
-        tolerance       1e-05;
-        relTol          0.1;
+        tolerance       1e-6;
+        relTol          0.01;
     }
 
-    "(U|k|nuTilda)Final"
+    "(U|e|k)Final"
     {
         $U;
-        tolerance       1e-05;
         relTol          0;
     }
 }
 
 PIMPLE
 {
+    momentumPredictor yes;
     nOuterCorrectors 1;
     nCorrectors     2;
     nNonOrthogonalCorrectors 0;
-    pRefCell        1001;
-    pRefValue       0;
+}
+
+relaxationFactors
+{
+    equations
+    {
+        ".*"  1;
+    }
 }
 
 

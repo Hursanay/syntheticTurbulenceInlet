@@ -85,7 +85,7 @@ Ready-to-run cases under `tutorials/`:
 
 | Tutorial | `geometryMode` | Inlet input | Solver |
 |---|---|---|---|
-| `annulus/` | `annulus` | `Umean` + non-zero `swirlNr` | incompressible |
+| `annulus/` | `annulus` | `massFlow` + non-zero `swirlNr` | compressible (`fluid`) |
 | `disk/` | `disk` | `Umean` | incompressible |
 | `rectangle_incompress_U/` | `rectangle` | `Umean` | incompressible |
 | `rectangle_compress_mdot/` | `rectangle` | `massFlow` | compressible (`fluid`) |

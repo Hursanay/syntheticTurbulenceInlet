@@ -26,7 +26,8 @@ boundaryField
     {
         type            syntheticTurbulenceInlet;
         geometryMode    annulus;
-        Umean           10.0;
+        massFlowMode    true;
+        massFlow        2.85e-3;
         swirlNr         0.5;
     }
     outlet
