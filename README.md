@@ -43,7 +43,7 @@ If you are writing academic publications using `syntheticTurbulenceInlet`, pleas
 
 ## Requirements
 
-- OpenFOAM-12 (foundation version)
+- OpenFOAM-13 (foundation version)
 
 ## Build
 
