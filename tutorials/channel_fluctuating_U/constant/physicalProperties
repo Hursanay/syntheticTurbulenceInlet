@@ -1,21 +1,20 @@
 /*--------------------------------*- C++ -*----------------------------------*\
-| =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v1812                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
-|    \\/     M anipulation  |                                                 |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           |
+     \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
-    version     2.0;
     format      ascii;
     class       dictionary;
     location    "constant";
-    object      transportProperties;
+    object      physicalProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-transportModel  Newtonian;
+viscosityModel  constant;
 
 // Re_tau = u_tau L / nu
 // Re_tau = 395
@@ -24,7 +23,7 @@ transportModel  Newtonian;
 // U_bulk = 17.55 -> u_tau = 1
 // -> nu = 1*1/395 = 2.532e-3
 
-nu              2.532e-3;
+nu              [0 2 -1 0 0 0 0] 2.532e-3;
 
 
 

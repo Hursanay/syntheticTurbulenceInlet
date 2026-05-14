@@ -5,10 +5,6 @@
   \\  /    A nd           | Copyright (C) 2011-2023 OpenFOAM Foundation
   \\/     M anipulation  |
   -------------------------------------------------------------------------------
-  Authors: Eirik Fyhn and Hursanay Fyhn
-
-  Inspired by turbulentDFSEMInlet.
-  -------------------------------------------------------------------------------
   License
   This file is part of OpenFOAM.
 
@@ -29,7 +25,7 @@
   Foam::syntheticTurbulenceInletFvPatchVectorField
 
   Description
-  Velocity inlet boundary condition for OpenFOAM-12 that generates
+  Velocity inlet boundary condition for OpenFOAM-dev that generates
   synthetic turbulent fluctuations consistent with a target
   Reynolds-stress tensor and integral-length-scale field, using a
   divergence-free synthetic eddy method (DFSEM).
@@ -49,7 +45,7 @@
   profiles (U, R, L) live under URL/, and ready-to-run tutorials for
   each geometryMode are under tutorials/.
 
-  See documentation/doc_syntheticTurbulence.pdf for the full method
+  See https://github.com/Hursanay/syntheticTurbulenceInlet/tree/main/documentation/doc_syntheticTurbulence.pdf for the full method
   description and the complete parameter table.
 
   If you use this boundary condition in academic work, please cite:
@@ -225,7 +221,7 @@ namespace Foam
       syntheticTurbulenceInletFvPatchVectorField
         (
          const fvPatch&,
-         const DimensionedField<vector, volMesh>&,
+         const DimensionedField<vector, fvMesh>&,
          const dictionary&
         );
 
@@ -235,7 +231,7 @@ namespace Foam
         (
          const syntheticTurbulenceInletFvPatchVectorField&,
          const fvPatch&,
-         const DimensionedField<vector, volMesh>&,
+         const DimensionedField<vector, fvMesh>&,
          const fieldMapper&
         );
 
@@ -249,13 +245,13 @@ namespace Foam
       syntheticTurbulenceInletFvPatchVectorField
         (
          const syntheticTurbulenceInletFvPatchVectorField&,
-         const DimensionedField<vector, volMesh>&
+         const DimensionedField<vector, fvMesh>&
         );
 
       //- Construct and return a clone setting internal field reference
       virtual tmp<fvPatchVectorField> clone
         (
-         const DimensionedField<vector, volMesh>& iF
+         const DimensionedField<vector, fvMesh>& iF
         ) const
         {
           return tmp<fvPatchVectorField>

@@ -56,7 +56,7 @@ Foam::syntheticTurbulenceInletFvPatchVectorField::
 syntheticTurbulenceInletFvPatchVectorField
 (
     const fvPatch& p,
-    const DimensionedField<vector, volMesh>& iF,
+    const DimensionedField<vector, fvMesh>& iF,
     const dictionary& dict
 )
 :
@@ -102,7 +102,7 @@ syntheticTurbulenceInletFvPatchVectorField
 (
     const syntheticTurbulenceInletFvPatchVectorField& ptf,
     const fvPatch& p,
-    const DimensionedField<vector, volMesh>& iF,
+    const DimensionedField<vector, fvMesh>& iF,
     const fieldMapper& mapper
 )
 :
@@ -150,7 +150,7 @@ Foam::syntheticTurbulenceInletFvPatchVectorField::
 syntheticTurbulenceInletFvPatchVectorField
 (
     const syntheticTurbulenceInletFvPatchVectorField& mwvpvf,
-    const DimensionedField<vector, volMesh>& iF
+    const DimensionedField<vector, fvMesh>& iF
 )
 :
     fixedValueFvPatchVectorField(mwvpvf, iF),
@@ -224,7 +224,7 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeGeometry()
 {
   centerCoord_ = gAverage(patch().Cf());
   /* Info << "Center coord: " << centerCoord_ << endl; */
-  const pointField& faceVertices = patch().patch().localPoints();
+  const pointField& faceVertices = patch().poly().localPoints();
 
   // Patch normal variable here points into domain
   const vectorField nf(patch().nf());
@@ -697,7 +697,7 @@ void Foam::syntheticTurbulenceInletFvPatchVectorField::initializeUProfile()
 
   if (debug)
   {
-      Info<< "Patch: " << patch().patch().name() << " eddy box:" << nl
+      Info<< "Patch: " << patch().poly().name() << " eddy box:" << nl
           << "    volume    : " << v0_ << nl
           << "    maxSigmaX : " << maxSigmaX_ << nl
           << endl;
