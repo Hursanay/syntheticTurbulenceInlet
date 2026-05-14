@@ -25,7 +25,6 @@ See `documentation/doc_syntheticTurbulence.pdf` for the full method description.
 ## Authors
 
 Hursanay Fyhn and Eirik Holm Fyhn — SINTEF Energy Research
-(<hursanay.fyhn@sintef.no>)
 
 ## Citation
 
@@ -41,6 +40,10 @@ If you are writing academic publications using `syntheticTurbulenceInlet`, pleas
    Laboratory-Scale Hydrogen-Fired *FlameSheet*™ Burner Operated at
    Atmospheric Pressure With Full Optical Access," *Journal of
    Engineering for Gas Turbines and Power* (accepted, 2026).
+
+## Download
+
+Select the branch corresponding to your OpenFOAM version.
 
 ## Build
 
